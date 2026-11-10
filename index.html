@@ -2,8 +2,13 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="China trip">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <title>China Trip</title>
 </head><body><script>
 (() => {
@@ -1787,4 +1792,51 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
   start();
 })();
 </script>
-</body></html>
+<style>
+.inst { position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 30; display: none; align-items: center; gap: 12px;
+  padding: 12px 12px 12px 14px; background: var(--surface, #fff); color: var(--ink, #111827); border: 1px solid var(--line, #e5e7eb); border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.16); font: 14px/1.35 Inter, system-ui, sans-serif; max-width: 520px; margin: 0 auto; }
+.inst.on { display: flex; }
+.inst img { width: 40px; height: 40px; border-radius: 10px; flex: none; }
+.inst .t { flex: 1; min-width: 0; }
+.inst .t b { display: block; font-weight: 600; }
+.inst .t span { color: var(--muted, #4b5563); }
+.inst .share { display: inline-block; width: 16px; height: 16px; vertical-align: -3px; }
+.inst button { font: inherit; border: 0; cursor: pointer; }
+.inst .go { background: var(--accent, #1d4ed8); color: #fff; font-weight: 600; padding: 10px 16px; border-radius: 10px; min-height: 44px; }
+.inst .no { background: none; color: var(--muted, #4b5563); width: 44px; height: 44px; border-radius: 10px; font-size: 22px; line-height: 1; flex: none; }
+@media (min-width: 900px) { .inst { bottom: 20px; } }
+</style>
+<div class="inst" id="inst" role="dialog" aria-label="Install the app">
+  <img src="icons/icon-192.png" alt="">
+  <div class="t" id="inst-t"></div>
+  <button class="go" id="inst-go" hidden>Install</button>
+  <button class="no" id="inst-no" aria-label="Not now">&times;</button>
+</div>
+<script>
+(() => {
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (standalone) return;
+  const KEY = 'trip-install-later';
+  try { if (Date.now() < +localStorage.getItem(KEY)) return; } catch (_) {}
+  const box = document.getElementById('inst'), t = document.getElementById('inst-t'), go = document.getElementById('inst-go');
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const shareIcon = '<svg class="share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+  let deferred = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferred = e;
+    t.innerHTML = '<b>Install China trip</b><span>Opens from your home screen and works offline.</span>';
+    go.hidden = false; box.classList.add('on');
+  });
+  go.addEventListener('click', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; box.classList.remove('on'); });
+  window.addEventListener('appinstalled', () => box.classList.remove('on'));
+  document.getElementById('inst-no').addEventListener('click', () => {
+    box.classList.remove('on'); try { localStorage.setItem(KEY, String(Date.now() + 3 * 864e5)); } catch (_) {}
+  });
+  if (ios) {
+    t.innerHTML = '<b>Add China trip to your home screen</b><span>Tap Share ' + shareIcon + ' (or <b style="display:inline">&middot;&middot;&middot;</b> then Share), then <b style="display:inline">Add to Home Screen</b>.</span>';
+    box.classList.add('on');
+  }
+})();
+</script></body></html>
