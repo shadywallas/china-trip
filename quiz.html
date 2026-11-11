@@ -8,14 +8,17 @@
 <title>Holiday Questionnaire</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap">
 <style>
 /* Questionnaire for the shutdown trip: Hong Kong or Shanghai. Same look as the trip pages (Inter, grey page, white cards).
-   Questions never name a place; each answer adds points to hk and/or sh (times the question weight). Cost is left out on purpose. */
+   English and Arabic (?lang=ar, right to left). Questions never name a place; each answer adds points to hk and/or sh (times the
+   question weight). Cost is left out on purpose. Questions marked "required" have no Skip button and a red frame.
+   More than MAX_SKIP skipped questions: no winner is announced. */
 :root {
   --bg: #f4f5f7; --surface: #ffffff; --sunken: #fafafa; --ink: #111827; --ink-2: #374151; --muted: #4b5563; --subtle: #9ca3af;
   --line: #e5e7eb; --accent: #1d4ed8; --accent-press: #1e3a8a; --select: #2563eb; --select-bg: #eff6ff;
   --hk: #2563eb; --sh: #7c3aed; --hk-bg: #dbeafe; --sh-bg: #ede9fe; --ok: #166534;
+  --req: #b91c1c; --req-bg: #fee2e2; --warn-bg: #fef3c7; --warn: #92400e;
   --shadow: 0 1px 3px rgba(17, 24, 39, .06); --focus-ring: 0 0 0 3px rgba(37, 99, 235, .4);
   --font: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: light;
@@ -24,45 +27,57 @@
   :root:not([data-theme="light"]) {
     --bg: #0f1115; --surface: #181b21; --sunken: #1e2128; --ink: #f3f4f6; --ink-2: #d1d5db; --muted: #9ca3af; --subtle: #6b7280; --line: #2b303a;
     --accent: #8fb4ff; --accent-press: #b9cfff; --select: #6b9cff; --select-bg: #1b2740;
-    --hk: #6b9cff; --sh: #a98bfa; --hk-bg: #1b2740; --sh-bg: #2a2147; --ok: #6ee7a0; color-scheme: dark;
+    --hk: #6b9cff; --sh: #a98bfa; --hk-bg: #1b2740; --sh-bg: #2a2147; --ok: #6ee7a0;
+    --req: #fca5a5; --req-bg: #3b1717; --warn-bg: #3a2a10; --warn: #fcd34d; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1115; --surface: #181b21; --sunken: #1e2128; --ink: #f3f4f6; --ink-2: #d1d5db; --muted: #9ca3af; --subtle: #6b7280; --line: #2b303a;
   --accent: #8fb4ff; --accent-press: #b9cfff; --select: #6b9cff; --select-bg: #1b2740;
-  --hk: #6b9cff; --sh: #a98bfa; --hk-bg: #1b2740; --sh-bg: #2a2147; --ok: #6ee7a0; color-scheme: dark;
+  --hk: #6b9cff; --sh: #a98bfa; --hk-bg: #1b2740; --sh-bg: #2a2147; --ok: #6ee7a0;
+  --req: #fca5a5; --req-bg: #3b1717; --warn-bg: #3a2a10; --warn: #fcd34d; color-scheme: dark;
 }
+:root[lang="ar"] { --font: "Noto Sans Arabic", Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font); min-height: 100vh; min-height: 100dvh; }
-button { font: inherit; color: inherit; }
+:root[lang="ar"] body { font-size: 17px; line-height: 1.7; }
+:root[dir="rtl"] * { letter-spacing: 0 !important; }
+button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .wrap { max-width: 640px; margin: 0 auto; padding: 16px 16px calc(32px + env(safe-area-inset-bottom)); }
 .top { display: flex; align-items: center; gap: 12px; min-height: 44px; margin-bottom: 8px; }
 .top .back { width: 44px; height: 44px; border: 0; background: none; border-radius: 12px; cursor: pointer; display: grid; place-items: center; color: var(--ink-2); flex: none; }
+:root[dir="rtl"] .top .back svg { transform: scaleX(-1); }
 .top .back[hidden] { display: none; }
-.top .count { font-size: 14px; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+.top .count { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lang { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; min-height: 36px; padding: 4px 12px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--ink-2); flex: none; }
 .bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; flex: 1; }
 .bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .3s ease; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 20px; }
-h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 8px; letter-spacing: -.01em; }
-h2 { font-size: 21px; line-height: 1.3; margin: 0 0 6px; letter-spacing: -.01em; }
+.card.req { border: 2px solid var(--req); }
+.reqtag { display: inline-flex; align-items: center; gap: 6px; background: var(--req-bg); color: var(--req); font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 99px; margin: 0 0 10px; }
+h1 { font-size: 26px; line-height: 1.25; margin: 4px 0 8px; letter-spacing: -.01em; }
+h2 { font-size: 21px; line-height: 1.35; margin: 0 0 6px; letter-spacing: -.01em; }
 .kind { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
+:root[lang="ar"] .kind { text-transform: none; font-size: 14px; }
 .sub { color: var(--muted); margin: 0 0 16px; font-size: 15px; }
 .opts { display: grid; gap: 10px; }
-.opt { display: block; width: 100%; text-align: left; padding: 14px 16px; min-height: 56px; border: 1.5px solid var(--line); border-radius: 14px;
+.opt { display: block; width: 100%; text-align: start; padding: 14px 16px; min-height: 56px; border: 1.5px solid var(--line); border-radius: 14px;
   background: var(--sunken); cursor: pointer; transition: border-color .15s, background .15s; }
 .opt[aria-pressed="true"] { border-color: var(--select); background: var(--select-bg); }
 .opt b { display: block; font-weight: 600; }
 .opt span { display: block; font-size: 14px; color: var(--muted); margin-top: 2px; }
 .opt.sit { padding: 16px 18px; }
-.opt.sit b { font-weight: 500; line-height: 1.45; }
+.opt.sit b { font-weight: 500; line-height: 1.5; }
+.skip { display: block; width: 100%; margin-top: 12px; min-height: 48px; border: 1.5px dashed var(--line); border-radius: 14px; background: none; color: var(--muted); font-weight: 500; cursor: pointer; }
+.skip[aria-pressed="true"] { border-color: var(--subtle); color: var(--ink-2); }
 .pics { display: grid; grid-template-columns: 1fr; gap: 12px; }
 @media (min-width: 520px) { .pics { grid-template-columns: 1fr 1fr; } }
 .pic { position: relative; padding: 0; border: 3px solid transparent; border-radius: 16px; overflow: hidden; cursor: pointer; background: var(--line); aspect-ratio: 4 / 3; }
 .pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .pic[aria-pressed="true"] { border-color: var(--select); }
-.pic .tag { position: absolute; left: 10px; top: 10px; width: 30px; height: 30px; border-radius: 99px; background: rgba(17, 24, 39, .65); color: #fff; font-weight: 600; font-size: 14px; display: grid; place-items: center; }
+.pic .tag { position: absolute; inset-inline-start: 10px; top: 10px; width: 30px; height: 30px; border-radius: 99px; background: rgba(17, 24, 39, .65); color: #fff; font-weight: 600; font-size: 14px; display: grid; place-items: center; }
 .pic[aria-pressed="true"] .tag { background: var(--select); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 12px 20px; border-radius: 12px; border: 0; cursor: pointer;
   background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; }
@@ -70,46 +85,50 @@ h2 { font-size: 21px; line-height: 1.3; margin: 0 0 6px; letter-spacing: -.01em;
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn { color: #0f1115; } }
 .btn.ghost { background: none; color: var(--ink-2); border: 1px solid var(--line); }
 .btn.wa { background: #16a34a; color: #fff; }
+@media (hover: hover) {
+  .top .back:hover { background: var(--surface); }
+  .opt:hover { border-color: var(--subtle); }
+  .skip:hover { border-color: var(--subtle); color: var(--ink-2); }
+  .btn:hover { background: var(--accent-press); }
+  .btn.ghost:hover { background: var(--surface); }
+  .btn.wa:hover { background: #15803d; }
+}
 .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.intro .lrow { display: flex; justify-content: flex-end; margin: -4px 0 4px; }
 .intro p { margin: 0 0 12px; color: var(--ink-2); }
-.intro ul { margin: 0 0 16px; padding-left: 20px; color: var(--ink-2); }
+.intro ul { margin: 0 0 16px; padding-inline-start: 20px; color: var(--ink-2); }
 .intro li { margin-bottom: 4px; }
+.intro li.r { color: var(--req); font-weight: 500; }
 /* Result */
 .win { text-align: center; padding: 24px 20px; }
 .win .eyebrow { font-size: 14px; color: var(--muted); margin: 0; }
 .win h1 { font-size: 34px; margin: 4px 0 4px; }
 .win .line { color: var(--ink-2); margin: 0; }
-.scores { display: grid; gap: 12px; margin-top: 20px; text-align: left; }
+.win.none h1 { font-size: 28px; }
+.scores { display: grid; gap: 12px; margin-top: 20px; text-align: start; }
 .score { display: grid; grid-template-columns: 96px 1fr 44px; align-items: center; gap: 10px; font-weight: 600; }
 .score .track { height: 12px; background: var(--line); border-radius: 99px; overflow: hidden; }
 .score .track i { display: block; height: 100%; border-radius: 99px; width: 0; transition: width .6s ease; }
 .score.hk i { background: var(--hk); } .score.sh i { background: var(--sh); }
-.score .n { text-align: right; font-variant-numeric: tabular-nums; }
+.score .n { text-align: end; font-variant-numeric: tabular-nums; }
+.skipnote { margin: 14px 0 0; font-size: 14px; color: var(--muted); }
 .sec { margin-top: 16px; }
 .sec h2 { font-size: 18px; margin-bottom: 10px; }
 .why { display: grid; gap: 10px; }
 .why .w { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--sunken); }
 .why .w b { display: block; font-weight: 600; font-size: 15px; }
 .why .w p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
-.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-right: 6px; vertical-align: 1px; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-inline-end: 6px; vertical-align: 1px; }
 .pill.hk { background: var(--hk-bg); color: var(--hk); } .pill.sh { background: var(--sh-bg); color: var(--sh); } .pill.even { background: var(--line); color: var(--ink-2); }
+.pill.skip-p { background: var(--warn-bg); color: var(--warn); }
 .revs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .rev { margin: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--sunken); position: relative; }
 .rev img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
-.rev figcaption { padding: 8px 10px; font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.rev figcaption { padding: 8px 10px; font-size: 13px; color: var(--ink-2); line-height: 1.4; }
 .rev.chosen { border-color: var(--select); box-shadow: 0 0 0 2px var(--select); }
-.rev .mine { position: absolute; top: 8px; left: 8px; background: var(--select); color: #fff; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+.rev .mine { position: absolute; top: 8px; inset-inline-start: 8px; background: var(--select); color: #fff; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
 .credits { font-size: 12px; color: var(--muted); margin-top: 16px; }
 .credits a { color: var(--muted); }
-.note { font-size: 14px; color: var(--muted); margin-top: 12px; }
-@media (hover: hover) {
-  .top .back:hover { background: var(--surface); }
-  .opt:hover { border-color: var(--subtle); }
-  .btn:hover { background: var(--accent-press); }
-  .btn.ghost:hover { background: var(--surface); }
-  .btn.wa:hover { background: #15803d; }
-}
-button { -webkit-tap-highlight-color: transparent; }
 .fade { animation: fade .25s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .fade { animation: none; } .bar i, .score .track i { transition: none; } }
@@ -117,9 +136,10 @@ button { -webkit-tap-highlight-color: transparent; }
 </head><body>
 <div class="wrap">
   <div class="top" id="top" hidden>
-    <button class="back" id="back" aria-label="Previous question"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="back" id="back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="bar" aria-hidden="true"><i id="bar"></i></div>
     <span class="count" id="count"></span>
+    <button class="lang" id="lang2"></button>
   </div>
   <main id="main"></main>
 </div>
@@ -128,20 +148,96 @@ button { -webkit-tap-highlight-color: transparent; }
   // Theme: the trip pages remember Light/Dark per browser under "tripTheme"; light by default.
   try { const t = localStorage.getItem("tripTheme"); document.documentElement.dataset.theme = t === "dark" ? "dark" : "light"; } catch (_) { document.documentElement.dataset.theme = "light"; }
 
-  const CITY = { hk: "Hong Kong", sh: "Shanghai" };
-  // Each question: kind (text | situation | photo), q, sub, w (weight), opts [{t, d?, img?, hk, sh, why, cap?}]
-  // hk/sh = points that answer gives each city (0–3). "why" explains the link at the end; "cap" names the photo.
-  const QUESTIONS = [{"kind":"text","w":2,"q":"Your ideal holiday weather is…","opts":[{"t":"Mild and sunny","d":"A light jacket in the evening is enough.","hk":3,"sh":0,"why":"Hong Kong is about 19°C by day and 14°C at night over these dates, with about 8 hours of sun."},{"t":"Proper winter","d":"Coat, scarf, gloves and hot drinks.","hk":0,"sh":3,"why":"Shanghai is about 10°C by day and 2°C at night: a crisp, damp winter cold."},{"t":"I do not mind, as long as it is dry","hk":1,"sh":1,"why":"Both cities are mostly dry at this time of year."}]},{"kind":"photo","w":1,"q":"A free morning. Which walk?","opts":[{"img":"hk-trail","hk":3,"sh":0,"cap":"A ridge trail above the sea, Hong Kong","why":"About 40% of Hong Kong is country park, and late December is its hiking season."},{"img":"sh-street","hk":0,"sh":3,"cap":"A quiet plane-tree street with old villas, Shanghai","why":"Shanghai's old French Concession is made of flat, leafy streets with villas and cafés."}]},{"kind":"text","w":2,"q":"On a free day, the walking you enjoy most is…","opts":[{"t":"Up and down","d":"Hills, stairs, and a trail with a view at the top.","hk":3,"sh":0,"why":"Hong Kong is steep: stairs, hill trails, and an 800 m outdoor escalator up the hillside."},{"t":"Flat and easy","d":"Long, leafy streets and riverside promenades.","hk":0,"sh":3,"why":"Shanghai is completely flat (its average height is 4 m), so walks have no climbs."}]},{"kind":"photo","w":1,"q":"Where would you sit for an hour?","opts":[{"img":"hk-beach","hk":3,"sh":0,"cap":"A sandy bay with green hills, Hong Kong","why":"Hong Kong has beaches and islands within half an hour of the centre, warm enough to sit on in December."},{"img":"sh-lake","hk":0,"sh":3,"cap":"West Lake in Hangzhou, a day trip from Shanghai","why":"West Lake, with its willows, causeways and pagodas, is about 45 minutes from Shanghai by fast train."}]},{"kind":"situation","w":2,"q":"It is 11:50 pm on 31 December. Which New Year's Eve sounds better?","opts":[{"t":"Standing by the water with a huge, excited crowd, waiting for big fireworks to burst over the harbour.","hk":3,"sh":0,"why":"Hong Kong's harbour fireworks return this year, announced as bigger than before, and draw hundreds of thousands of people."},{"t":"A nice warm dinner, then a calm walk to see the city lights. Fireworks do not matter to me.","hk":1,"sh":2,"why":"Shanghai has had no official fireworks since 2016; its New Year's Eve is lights and river views."}]},{"kind":"text","w":1,"q":"Packed streets with neon signs and noise make you feel…","opts":[{"t":"Excited","d":"I love the buzz.","hk":3,"sh":0,"why":"Parts of Hong Kong, such as Mong Kok, are among the densest places on earth, full of neon and night markets."},{"t":"Fine for an evening, not every day","hk":1,"sh":1,"why":"Both cities have busy areas and calmer ones."},{"t":"Tired","d":"I like space to breathe.","hk":0,"sh":3,"why":"Shanghai has wide avenues and long riverside promenades (its sights do get busy on 1–3 Jan, a mainland holiday)."}]},{"kind":"photo","w":1,"q":"Which evening would you step into?","opts":[{"img":"hk-neon","hk":3,"sh":0,"cap":"A neon street at night, Hong Kong","why":"Hong Kong's night streets and markets, such as Mong Kok and Temple Street, are dense and lively."},{"img":"sh-boulevard","hk":0,"sh":3,"cap":"A wide shopping street at night, Shanghai","why":"Shanghai's Nanjing Road is a wide, lit pedestrian avenue of big stores."}]},{"kind":"situation","w":1,"q":"A day trip out of the city. Which day sounds better?","opts":[{"t":"An hour on a ferry to a little old town with pastel Portuguese squares, wavy cobblestones and egg tarts, then glittering casino resorts at night.","hk":3,"sh":0,"why":"That is Macau, an hour by ferry from Hong Kong, with no visa needed."},{"t":"A fast train to a calm lake with willow-lined causeways, pagodas and tea hills, maybe a little misty.","hk":0,"sh":3,"why":"That is Hangzhou's West Lake, about 45 minutes from Shanghai by fast train."}]},{"kind":"photo","w":1,"q":"Which ride on the water?","opts":[{"img":"hk-ferry","hk":3,"sh":0,"cap":"A ferry crossing the harbour, Hong Kong","why":"Ferries cross Hong Kong's harbour all day, and others run out to the islands."},{"img":"sh-watertown","hk":0,"sh":3,"cap":"A canal town with a stone bridge near Shanghai","why":"Zhujiajiao, a canal town with old stone bridges, is about an hour from Shanghai by metro."}]},{"kind":"situation","w":1,"q":"It is 8 pm and 2°C, with a damp wind. You are heading out to see the lights.","opts":[{"t":"Lovely. I wrap up warm and stroll with a hot drink.","hk":0,"sh":3,"why":"That is a normal Shanghai evening in late December, and it gets dark there before 5 pm."},{"t":"I would rather it were 14°C, with just a light jacket.","hk":3,"sh":0,"why":"Hong Kong evenings are about 14°C at this time of year."}]},{"kind":"photo","w":1,"q":"Which place would you explore?","opts":[{"img":"hk-macau","hk":3,"sh":0,"cap":"A Portuguese-style square in Macau, a day trip from Hong Kong","why":"Macau's old centre is a UNESCO-listed mix of Portuguese squares, churches and Chinese streets."},{"img":"sh-garden","hk":0,"sh":3,"cap":"A classical Chinese garden, Shanghai","why":"Shanghai has classical gardens with ponds, rockeries and curved roofs, such as Yu Garden."}]},{"kind":"text","w":1,"q":"On holiday, your phone…","opts":[{"t":"Should work just like at home","d":"WhatsApp, Instagram and Google Maps, with no setup.","hk":3,"sh":0,"why":"In Shanghai, Google, WhatsApp and Instagram are blocked, so you need a travel eSIM and Chinese payment apps. In Hong Kong everything works as at home."},{"t":"I do not mind setting up a travel eSIM and new apps","hk":1,"sh":1,"why":"Then this does not matter: both cities work for you."}]},{"kind":"photo","w":1,"q":"Which view would you travel for?","opts":[{"img":"hk-buddha","hk":3,"sh":0,"cap":"A giant Buddha on a green mountain, Hong Kong","why":"A 5.7 km cable car over the sea and hills leads to the Big Buddha on Lantau Island."},{"img":"sh-skyline","hk":0,"sh":3,"cap":"The skyscrapers across the river, Shanghai","why":"Shanghai's riverfront faces one of the tallest skylines in the world; the Shanghai Tower deck is at 546 m."}]},{"kind":"text","w":1,"q":"Which feels more like a holiday to you?","opts":[{"t":"A mix of East and West","d":"English everywhere, and things feel a little familiar.","hk":3,"sh":0,"why":"English is an official language in Hong Kong, a mix of British and Chinese; Macau adds Portuguese."},{"t":"Somewhere completely different","d":"I want to feel that I am really in China.","hk":0,"sh":3,"why":"Shanghai feels like mainland China: Chinese menus, Chinese apps, old lanes and gardens."}]},{"kind":"photo","w":1,"q":"Which afternoon?","opts":[{"img":"hk-peak","hk":3,"sh":0,"cap":"The view down over the harbour at dusk, Hong Kong","why":"From Victoria Peak you look down on the towers, the harbour and the hills around them."},{"img":"sh-lane","hk":0,"sh":3,"cap":"An old stone-gate lane with cafés and small shops, Shanghai","why":"Shanghai's old lane houses, such as Tianzifang and Xintiandi, are full of cafés and small shops."}]},{"kind":"text","w":1,"q":"Your perfect dinner after a long day…","opts":[{"t":"A Turkish or Lebanese grill, or Italian, near the hotel","hk":2,"sh":0,"why":"Hong Kong has more certified Middle Eastern, Turkish and Western halal restaurants, many near the main mosque on Nathan Road."},{"t":"A bowl of hand-pulled halal beef noodles in a simple local shop","hk":0,"sh":2,"why":"Shanghai has halal Lanzhou noodle and Xinjiang shops all over the city, and a Friday Muslim food market."}]},{"kind":"text","w":1,"q":"For a fun day out, you would choose…","opts":[{"t":"A cable car over the sea and mountains, then a ferry back","hk":3,"sh":0,"why":"Hong Kong has a 5.7 km cable car to the Big Buddha, and ferries everywhere."},{"t":"One of the tallest towers in the world, then a river cruise at night","hk":0,"sh":3,"why":"The Shanghai Tower deck is at 546 m, and night cruises run between the old waterfront and the skyscrapers."},{"t":"A theme park, all day","hk":2,"sh":1,"why":"Hong Kong has two parks (Disneyland and Ocean Park) with mild-weather queues; Shanghai has one big Disney park, cold queues, and holiday crowds on 1–3 Jan."}]},{"kind":"photo","w":1,"q":"Last one. Where would you wander?","opts":[{"img":"hk-island","hk":3,"sh":0,"cap":"Fishing boats in an island harbour, Hong Kong","why":"Hong Kong has 263 islands, and fishing harbours such as Cheung Chau and Tai O are a ferry ride away."},{"img":"sh-artdeco","hk":0,"sh":3,"cap":"Grand old buildings along the river, Shanghai","why":"The Bund is a riverfront row of grand early-1900s and Art Deco buildings."}]}];
+  // Each question: kind (text | situation | photo), q, w (weight), required, ar {q}, opts [{t, d?, img?, hk, sh, why, cap?, ar {t, d, why, cap}}]
+  const QUESTIONS = [{"kind":"text","w":2,"q":"Your ideal holiday weather is…","opts":[{"t":"Mild and sunny","d":"A light jacket in the evening is enough.","hk":3,"sh":0,"why":"Hong Kong is about 19°C by day and 14°C at night over these dates, with about 8 hours of sun.","ar":{"why":"حرارة هونغ كونغ في هذه الأيام حوالي 19 درجة نهارًا و14 ليلًا، مع حوالي 8 ساعات من الشمس يوميًا.","t":"معتدل ومشمس","d":"يكفي جاكيت خفيف في المساء."}},{"t":"Proper winter","d":"Coat, scarf, gloves and hot drinks.","hk":0,"sh":3,"why":"Shanghai is about 10°C by day and 2°C at night: a crisp, damp winter cold.","ar":{"why":"حرارة شنغهاي حوالي 10 درجات نهارًا ودرجتان ليلًا: برد شتوي قارس ورطب.","t":"شتاء حقيقي","d":"معطف وكوفية وقفازات ومشروبات ساخنة."}},{"t":"I do not mind, as long as it is dry","hk":1,"sh":1,"why":"Both cities are mostly dry at this time of year.","ar":{"why":"المدينتان جافتان غالبًا في هذا الوقت من السنة.","t":"لا يهمني، طالما أن الجو غير ممطر"}}],"ar":{"q":"طقس الإجازة المثالي بالنسبة لكِ…"},"required":true},{"kind":"photo","w":1,"q":"A free morning. Which walk?","opts":[{"img":"hk-trail","hk":3,"sh":0,"cap":"A ridge trail above the sea, Hong Kong","why":"About 40% of Hong Kong is country park, and late December is its hiking season.","ar":{"why":"حوالي 40% من مساحة هونغ كونغ محميات طبيعية، وأواخر ديسمبر هو موسم المشي في الجبال.","cap":"ممر على قمة تل فوق البحر، هونغ كونغ"}},{"img":"sh-street","hk":0,"sh":3,"cap":"A quiet plane-tree street with old villas, Shanghai","why":"Shanghai's old French Concession is made of flat, leafy streets with villas and cafés.","ar":{"why":"الحي الفرنسي القديم في شنغهاي شوارع مستوية تظللها الأشجار، فيها فيلات ومقاهٍ.","cap":"شارع هادئ تظلله الأشجار وفيه فيلات قديمة، شنغهاي"}}],"ar":{"q":"صباح يوم حر. أي نزهة تختارين؟"}},{"kind":"text","w":2,"q":"On a free day, the walking you enjoy most is…","opts":[{"t":"Up and down","d":"Hills, stairs, and a trail with a view at the top.","hk":3,"sh":0,"why":"Hong Kong is steep: stairs, hill trails, and an 800 m outdoor escalator up the hillside.","ar":{"why":"هونغ كونغ مدينة منحدرة: سلالم وممرات جبلية وسلم متحرك مكشوف بطول 800 متر على سفح التل.","t":"صعود ونزول","d":"تلال وسلالم، وممر جبلي ينتهي بمنظر جميل."}},{"t":"Flat and easy","d":"Long, leafy streets and riverside promenades.","hk":0,"sh":3,"why":"Shanghai is completely flat (its average height is 4 m), so walks have no climbs.","ar":{"why":"شنغهاي مستوية تمامًا (متوسط ارتفاعها 4 أمتار)، فلا صعود في المشي.","t":"مستوٍ وسهل","d":"شوارع طويلة تظللها الأشجار وممشى على النهر."}}],"ar":{"q":"في يوم حر، أكثر نوع مشي تستمتعين به…"},"required":true},{"kind":"photo","w":1,"q":"Where would you sit for an hour?","opts":[{"img":"hk-beach","hk":3,"sh":0,"cap":"A sandy bay with green hills, Hong Kong","why":"Hong Kong has beaches and islands within half an hour of the centre, warm enough to sit on in December.","ar":{"why":"في هونغ كونغ شواطئ وجزر على بعد نصف ساعة من وسط المدينة، والجو دافئ بما يكفي للجلوس عليها في ديسمبر.","cap":"خليج رملي تحيط به تلال خضراء، هونغ كونغ"}},{"img":"sh-lake","hk":0,"sh":3,"cap":"West Lake in Hangzhou, a day trip from Shanghai","why":"West Lake, with its willows, causeways and pagodas, is about 45 minutes from Shanghai by fast train.","ar":{"why":"بحيرة الغرب بأشجار الصفصاف والجسور والمعابد على بعد حوالي 45 دقيقة من شنغهاي بالقطار السريع.","cap":"بحيرة الغرب في هانغتشو، رحلة يوم من شنغهاي"}}],"ar":{"q":"أين تحبين أن تجلسي لمدة ساعة؟"}},{"kind":"situation","w":2,"q":"It is 11:50 pm on 31 December. Which New Year's Eve sounds better?","opts":[{"t":"Standing by the water with a huge, excited crowd, waiting for big fireworks to burst over the harbour.","hk":3,"sh":0,"why":"Hong Kong's harbour fireworks return this year, announced as bigger than before, and draw hundreds of thousands of people.","ar":{"why":"تعود الألعاب النارية فوق ميناء هونغ كونغ هذا العام، وأُعلن أنها ستكون أكبر من قبل، ويحضرها مئات الآلاف.","t":"نقف على الواجهة المائية وسط حشد كبير ومتحمس، ننتظر ألعابًا نارية ضخمة فوق الميناء."}},{"t":"A nice warm dinner, then a calm walk to see the city lights. Fireworks do not matter to me.","hk":1,"sh":2,"why":"Shanghai has had no official fireworks since 2016; its New Year's Eve is lights and river views.","ar":{"why":"لا توجد ألعاب نارية رسمية في شنغهاي منذ 2016؛ ليلة رأس السنة هناك أضواء ومناظر على النهر.","t":"عشاء دافئ لطيف، ثم نزهة هادئة لرؤية أضواء المدينة. الألعاب النارية لا تهمني."}}],"ar":{"q":"الساعة 11:50 مساء يوم 31 ديسمبر. أي ليلة رأس سنة تبدو أجمل؟"},"required":true},{"kind":"text","w":1,"q":"Packed streets with neon signs and noise make you feel…","opts":[{"t":"Excited","d":"I love the buzz.","hk":3,"sh":0,"why":"Parts of Hong Kong, such as Mong Kok, are among the densest places on earth, full of neon and night markets.","ar":{"why":"بعض مناطق هونغ كونغ، مثل مونغ كوك، من أكثر الأماكن ازدحامًا في العالم، مليئة بالنيون وأسواق الليل.","t":"بالحماس","d":"أحب هذه الحيوية."}},{"t":"Fine for an evening, not every day","hk":1,"sh":1,"why":"Both cities have busy areas and calmer ones.","ar":{"why":"في المدينتين مناطق مزدحمة وأخرى هادئة.","t":"لا بأس لسهرة واحدة، لكن ليس كل يوم"}},{"t":"Tired","d":"I like space to breathe.","hk":0,"sh":3,"why":"Shanghai has wide avenues and long riverside promenades (its sights do get busy on 1–3 Jan, a mainland holiday).","ar":{"why":"في شنغهاي شوارع واسعة وممشى طويل على النهر (لكن المعالم تزدحم من 1 إلى 3 يناير، وهي عطلة رسمية في الصين).","t":"بالتعب","d":"أحب المساحات الواسعة."}}],"ar":{"q":"الشوارع المزدحمة بلافتات النيون والضوضاء تجعلكِ تشعرين…"}},{"kind":"photo","w":1,"q":"Which evening would you step into?","opts":[{"img":"hk-neon","hk":3,"sh":0,"cap":"A neon street at night, Hong Kong","why":"Hong Kong's night streets and markets, such as Mong Kok and Temple Street, are dense and lively.","ar":{"why":"شوارع هونغ كونغ وأسواقها الليلية، مثل مونغ كوك وشارع تمبل، مزدحمة ومليئة بالحياة.","cap":"شارع نيون ليلًا، هونغ كونغ"}},{"img":"sh-boulevard","hk":0,"sh":3,"cap":"A wide shopping street at night, Shanghai","why":"Shanghai's Nanjing Road is a wide, lit pedestrian avenue of big stores.","ar":{"why":"شارع نانجينغ في شنغهاي ممشى واسع مضاء تحيط به المتاجر الكبرى.","cap":"شارع تسوق واسع ليلًا، شنغهاي"}}],"ar":{"q":"أي سهرة تحبين أن تخرجي إليها؟"}},{"kind":"situation","w":1,"q":"A day trip out of the city. Which day sounds better?","opts":[{"t":"An hour on a ferry to a little old town with pastel Portuguese squares, wavy cobblestones and egg tarts, then glittering casino resorts at night.","hk":3,"sh":0,"why":"That is Macau, an hour by ferry from Hong Kong, with no visa needed.","ar":{"why":"هذه ماكاو، على بعد ساعة بالعبّارة من هونغ كونغ، ولا تحتاج إلى تأشيرة.","t":"ساعة بالعبّارة إلى بلدة قديمة صغيرة فيها ساحات برتغالية بألوان فاتحة وأرضيات مموجة وفطائر البيض، ثم منتجعات متلألئة في المساء."}},{"t":"A fast train to a calm lake with willow-lined causeways, pagodas and tea hills, maybe a little misty.","hk":0,"sh":3,"why":"That is Hangzhou's West Lake, about 45 minutes from Shanghai by fast train.","ar":{"why":"هذه بحيرة الغرب في هانغتشو، على بعد حوالي 45 دقيقة من شنغهاي بالقطار السريع.","t":"قطار سريع إلى بحيرة هادئة فيها جسور تحفها أشجار الصفصاف ومعابد وتلال الشاي، وربما بعض الضباب."}}],"ar":{"q":"رحلة يوم خارج المدينة. أي يوم يبدو أجمل؟"}},{"kind":"photo","w":1,"q":"Which ride on the water?","opts":[{"img":"hk-ferry","hk":3,"sh":0,"cap":"A ferry crossing the harbour, Hong Kong","why":"Ferries cross Hong Kong's harbour all day, and others run out to the islands.","ar":{"why":"العبّارات تعبر ميناء هونغ كونغ طوال اليوم، وأخرى تذهب إلى الجزر.","cap":"عبّارة تعبر الميناء، هونغ كونغ"}},{"img":"sh-watertown","hk":0,"sh":3,"cap":"A canal town with a stone bridge near Shanghai","why":"Zhujiajiao, a canal town with old stone bridges, is about an hour from Shanghai by metro.","ar":{"why":"تشوجياجياو بلدة قنوات فيها جسور حجرية قديمة، على بعد حوالي ساعة من شنغهاي بالمترو.","cap":"بلدة قنوات فيها جسر حجري قرب شنغهاي"}}],"ar":{"q":"أي رحلة على الماء؟"}},{"kind":"situation","w":1,"q":"It is 8 pm and 2°C, with a damp wind. You are heading out to see the lights.","opts":[{"t":"Lovely. I wrap up warm and stroll with a hot drink.","hk":0,"sh":3,"why":"That is a normal Shanghai evening in late December, and it gets dark there before 5 pm.","ar":{"why":"هذه أمسية عادية في شنغهاي في أواخر ديسمبر، والظلام يحل هناك قبل الخامسة مساءً.","t":"جميل. أتدفأ جيدًا وأتمشى مع مشروب ساخن."}},{"t":"I would rather it were 14°C, with just a light jacket.","hk":3,"sh":0,"why":"Hong Kong evenings are about 14°C at this time of year.","ar":{"why":"أمسيات هونغ كونغ حوالي 14 درجة في هذا الوقت من السنة.","t":"أفضّل أن تكون الحرارة 14 درجة مع جاكيت خفيف فقط."}}],"ar":{"q":"الساعة 8 مساءً والحرارة درجتان، مع رياح رطبة. أنتِ خارجة لرؤية الأضواء."},"required":true},{"kind":"photo","w":1,"q":"Which place would you explore?","opts":[{"img":"hk-macau","hk":3,"sh":0,"cap":"A Portuguese-style square in Macau, a day trip from Hong Kong","why":"Macau's old centre is a UNESCO-listed mix of Portuguese squares, churches and Chinese streets.","ar":{"why":"وسط ماكاو القديم مسجل في اليونسكو، ويمزج الساحات البرتغالية والكنائس والشوارع الصينية.","cap":"ساحة على الطراز البرتغالي في ماكاو، رحلة يوم من هونغ كونغ"}},{"img":"sh-garden","hk":0,"sh":3,"cap":"A classical Chinese garden, Shanghai","why":"Shanghai has classical gardens with ponds, rockeries and curved roofs, such as Yu Garden.","ar":{"why":"في شنغهاي حدائق تقليدية فيها برك وصخور وأسقف منحنية، مثل حديقة يويوان.","cap":"حديقة صينية تقليدية، شنغهاي"}}],"ar":{"q":"أي مكان تحبين أن تستكشفي؟"}},{"kind":"text","w":1,"q":"On holiday, your phone…","opts":[{"t":"Should work just like at home","d":"WhatsApp, Instagram and Google Maps, with no setup.","hk":3,"sh":0,"why":"In Shanghai, Google, WhatsApp and Instagram are blocked, so you need a travel eSIM and Chinese payment apps. In Hong Kong everything works as at home.","ar":{"why":"في شنغهاي جوجل وواتساب وإنستغرام محجوبة، فتحتاجين إلى شريحة eSIM للسفر وتطبيقات دفع صينية. في هونغ كونغ كل شيء يعمل كما في البيت.","t":"يجب أن يعمل كما في البيت","d":"واتساب وإنستغرام وخرائط جوجل، بدون أي إعداد."}},{"t":"I do not mind setting up a travel eSIM and new apps","hk":1,"sh":1,"why":"Then this does not matter: both cities work for you.","ar":{"why":"إذن هذا لا يهم: المدينتان مناسبتان لكِ.","t":"لا مانع عندي من إعداد شريحة eSIM وتطبيقات جديدة"}}],"ar":{"q":"في الإجازة، هاتفكِ…"},"required":true},{"kind":"photo","w":1,"q":"Which view would you travel for?","opts":[{"img":"hk-buddha","hk":3,"sh":0,"cap":"A giant Buddha on a green mountain, Hong Kong","why":"A 5.7 km cable car over the sea and hills leads to the Big Buddha on Lantau Island.","ar":{"why":"تلفريك بطول 5.7 كم فوق البحر والتلال يوصل إلى تمثال بوذا الكبير في جزيرة لانتاو.","cap":"تمثال بوذا ضخم على جبل أخضر، هونغ كونغ"}},{"img":"sh-skyline","hk":0,"sh":3,"cap":"The skyscrapers across the river, Shanghai","why":"Shanghai's riverfront faces one of the tallest skylines in the world; the Shanghai Tower deck is at 546 m.","ar":{"why":"تطل ضفة النهر في شنغهاي على واحد من أعلى خطوط الأفق في العالم؛ منصة برج شنغهاي على ارتفاع 546 مترًا.","cap":"ناطحات السحاب على الضفة الأخرى من النهر، شنغهاي"}}],"ar":{"q":"أي منظر يستحق السفر من أجله؟"}},{"kind":"text","w":1,"q":"Which feels more like a holiday to you?","opts":[{"t":"A mix of East and West","d":"English everywhere, and things feel a little familiar.","hk":3,"sh":0,"why":"English is an official language in Hong Kong, a mix of British and Chinese; Macau adds Portuguese.","ar":{"why":"الإنجليزية لغة رسمية في هونغ كونغ، وهي مزيج بريطاني صيني؛ وماكاو تضيف لمسة برتغالية.","t":"مزيج من الشرق والغرب","d":"الإنجليزية في كل مكان، والأشياء مألوفة قليلًا."}},{"t":"Somewhere completely different","d":"I want to feel that I am really in China.","hk":0,"sh":3,"why":"Shanghai feels like mainland China: Chinese menus, Chinese apps, old lanes and gardens.","ar":{"why":"شنغهاي تشبه الصين الحقيقية: قوائم طعام صينية وتطبيقات صينية وحارات وحدائق قديمة.","t":"مكان مختلف تمامًا","d":"أريد أن أشعر أنني في الصين فعلًا."}}],"ar":{"q":"أي من هذين يشعركِ أكثر بأنكِ في إجازة؟"}},{"kind":"photo","w":1,"q":"Which afternoon?","opts":[{"img":"hk-peak","hk":3,"sh":0,"cap":"The view down over the harbour at dusk, Hong Kong","why":"From Victoria Peak you look down on the towers, the harbour and the hills around them.","ar":{"why":"من قمة فيكتوريا ترين الأبراج والميناء والتلال حولها.","cap":"منظر الميناء من أعلى الجبل عند الغروب، هونغ كونغ"}},{"img":"sh-lane","hk":0,"sh":3,"cap":"An old stone-gate lane with cafés and small shops, Shanghai","why":"Shanghai's old lane houses, such as Tianzifang and Xintiandi, are full of cafés and small shops.","ar":{"why":"حارات شنغهاي القديمة، مثل تيانزيفانغ وشينتياندي، مليئة بالمقاهي والمحلات الصغيرة.","cap":"حارة قديمة ببوابات حجرية فيها مقاهٍ ومحلات صغيرة، شنغهاي"}}],"ar":{"q":"أي عصرية تختارين؟"}},{"kind":"text","w":1,"q":"Your perfect dinner after a long day…","opts":[{"t":"A Turkish or Lebanese grill, or Italian, near the hotel","hk":2,"sh":0,"why":"Hong Kong has more certified Middle Eastern, Turkish and Western halal restaurants, many near the main mosque on Nathan Road.","ar":{"why":"في هونغ كونغ مطاعم حلال معتمدة أكثر، شرق أوسطية وتركية وغربية، كثير منها قرب المسجد الرئيسي في شارع ناثان.","t":"مشويات تركية أو لبنانية، أو أكل إيطالي، قرب الفندق"}},{"t":"A bowl of hand-pulled halal beef noodles in a simple local shop","hk":0,"sh":2,"why":"Shanghai has halal Lanzhou noodle and Xinjiang shops all over the city, and a Friday Muslim food market.","ar":{"why":"في شنغهاي محلات نودلز لانتشو وشينجيانغ الحلال في كل مكان، وسوق طعام إسلامي كل جمعة.","t":"طبق نودلز لحم حلال مسحوب باليد في محل محلي بسيط"}}],"ar":{"q":"عشاؤكِ المثالي بعد يوم طويل…"}},{"kind":"text","w":1,"q":"For a fun day out, you would choose…","opts":[{"t":"A cable car over the sea and mountains, then a ferry back","hk":3,"sh":0,"why":"Hong Kong has a 5.7 km cable car to the Big Buddha, and ferries everywhere.","ar":{"why":"في هونغ كونغ تلفريك بطول 5.7 كم إلى تمثال بوذا الكبير، والعبّارات في كل مكان.","t":"تلفريك فوق البحر والجبال، ثم العودة بالعبّارة"}},{"t":"One of the tallest towers in the world, then a river cruise at night","hk":0,"sh":3,"why":"The Shanghai Tower deck is at 546 m, and night cruises run between the old waterfront and the skyscrapers.","ar":{"why":"منصة برج شنغهاي على ارتفاع 546 مترًا، والرحلات الليلية تمر بين الواجهة القديمة وناطحات السحاب.","t":"واحد من أعلى الأبراج في العالم، ثم رحلة نهرية ليلية"}},{"t":"A theme park, all day","hk":2,"sh":1,"why":"Hong Kong has two parks (Disneyland and Ocean Park) with mild-weather queues; Shanghai has one big Disney park, cold queues, and holiday crowds on 1–3 Jan.","ar":{"why":"في هونغ كونغ مدينتا ملاهٍ (ديزني لاند وأوشن بارك) والطوابير في جو معتدل؛ وفي شنغهاي ديزني واحدة كبيرة، وطوابير في البرد، وزحام العطلة من 1 إلى 3 يناير.","t":"مدينة ملاهٍ، طوال اليوم"}}],"ar":{"q":"ليوم ممتع، تختارين…"}},{"kind":"photo","w":1,"q":"Last one. Where would you wander?","opts":[{"img":"hk-island","hk":3,"sh":0,"cap":"Fishing boats in an island harbour, Hong Kong","why":"Hong Kong has 263 islands, and fishing harbours such as Cheung Chau and Tai O are a ferry ride away.","ar":{"why":"في هونغ كونغ 263 جزيرة، وموانئ الصيد مثل تشيونغ تشاو وتاي أو على بعد رحلة بالعبّارة.","cap":"قوارب صيد في ميناء جزيرة، هونغ كونغ"}},{"img":"sh-artdeco","hk":0,"sh":3,"cap":"Grand old buildings along the river, Shanghai","why":"The Bund is a riverfront row of grand early-1900s and Art Deco buildings.","ar":{"why":"البوند صف من المباني الفخمة على النهر، من أوائل القرن العشرين وعلى طراز آرت ديكو.","cap":"مبانٍ قديمة فخمة على طول النهر، شنغهاي"}}],"ar":{"q":"السؤال الأخير. أين تحبين أن تتجولي؟"}}];
   const CREDITS = {"hk-trail":{"file":"hk-trail.jpg","title":"Hikers on the Dragon's Back ridge above Shek O, Hong Kong Island","author":"Seaman Christopher Veloicaza, U.S. Navy","license":"Public domain","source":"https://commons.wikimedia.org/wiki/File:USS_Essex_visit_to_Hong_Kong_150610-N-FV739-266.jpg"},"sh-street":{"file":"sh-street.jpg","title":"Plane-tree-lined Wukang Road, former French Concession, Shanghai","author":"SSYoung","license":"CC BY-SA 4.0","source":"https://commons.wikimedia.org/wiki/File:Wukang_Road,_Shanghai,_May_2016.JPG"},"hk-beach":{"file":"hk-beach.jpg","title":"Repulse Bay beach with hills behind, Hong Kong Island","author":"Wing1990hk","license":"CC BY 3.0","source":"https://commons.wikimedia.org/wiki/File:Repulse_Bay_201501.jpg"},"sh-lake":{"file":"sh-lake.jpg","title":"Leifeng Pagoda across West Lake framed by a willow, Hangzhou","author":"Yinweichen","license":"CC BY-SA 4.0","source":"https://commons.wikimedia.org/wiki/File:Leifeng_Pagoda_and_Willow_Tree_across_West_Lake.jpg"},"hk-neon":{"file":"hk-neon.jpg","title":"Neon signs over a busy street at night, Mong Kok, Hong Kong","author":"Benh LIEU SONG from Torcy, France","license":"CC BY-SA 2.0","source":"https://commons.wikimedia.org/wiki/File:Mong_Kok_Neon_Signs_Night_(48127904386).jpg"},"sh-boulevard":{"file":"sh-boulevard.jpg","title":"Nanjing Road East pedestrian street at night, Shanghai","author":"Hermann Luyken","license":"CC0","source":"https://commons.wikimedia.org/wiki/File:2014.11.15.181406_Nanjing_Road_Pedestrian_Zone_Shanghai.jpg"},"hk-ferry":{"file":"hk-ferry.jpg","title":"Star Ferry Solar Star crossing Victoria Harbour, Hong Kong","author":"Bernard Spragg. NZ from Christchurch, New Zealand","license":"CC0","source":"https://commons.wikimedia.org/wiki/File:%22Solar_Star%22_Ferry_to_Central.HK_(15853925347).jpg"},"sh-watertown":{"file":"sh-watertown.jpg","title":"Stone arched bridge over a canal in Zhujiajiao water town, Shanghai","author":"Supanut Arunoprayote","license":"CC BY 4.0","source":"https://commons.wikimedia.org/wiki/File:Zhujiajiao_Ancient_Town_Moon_Bridge_20251129.jpg"},"hk-macau":{"file":"hk-macau.jpg","title":"Senado Square (Largo do Senado) with wave-pattern cobbles, Macau","author":"Bahnfrend","license":"CC BY-SA 4.0","source":"https://commons.wikimedia.org/wiki/File:Largo_do_Senado,_2023_(02).jpg"},"sh-garden":{"file":"sh-garden.jpg","title":"Covered walkway, pond and pavilion in Yu Garden, Shanghai","author":"Stefan Fussan","license":"CC BY-SA 3.0","source":"https://commons.wikimedia.org/wiki/File:Shanghai_-_Yu_Garden_-_0034.jpg"},"hk-buddha":{"file":"hk-buddha.jpg","title":"Tian Tan Buddha above the green hills of Lantau Island, Hong Kong","author":"Huangdan2060","license":"CC BY 4.0","source":"https://commons.wikimedia.org/wiki/File:Tian_Tan_Buddha_2023081302.jpg"},"sh-skyline":{"file":"sh-skyline.jpg","title":"Lujiazui skyline across the Huangpu River from the Bund, Shanghai","author":"YouTable","license":"CC BY-SA 4.0","source":"https://commons.wikimedia.org/wiki/File:Lujiazui_from_the_Bund_riverside.jpg"},"hk-peak":{"file":"hk-peak.jpg","title":"Hong Kong Island and Victoria Harbour at dusk from Victoria Peak","author":"Estial","license":"CC BY-SA 4.0","source":"https://commons.wikimedia.org/wiki/File:Hong_Kong_Skyscrapers.jpg"},"sh-lane":{"file":"sh-lane.jpg","title":"Ivy-covered shikumen lane with small shops in Tianzifang, Shanghai","author":"钉钉","license":"CC BY-SA 4.0","source":"https://commons.wikimedia.org/wiki/File:Tianzifang_3.jpg"},"hk-island":{"file":"hk-island.jpg","title":"Fishing boats in Cheung Chau harbour, Hong Kong","author":"Bernard Spragg. NZ from Christchurch, New Zealand","license":"CC0","source":"https://commons.wikimedia.org/wiki/File:Cheung_Chau.Hong_Kong._(17028191765).jpg"},"sh-artdeco":{"file":"sh-artdeco.jpg","title":"Peace Hotel, Bank of China and other historic Bund buildings across the Huangpu, Shanghai","author":"xiquinhosilva","license":"CC BY 2.0","source":"https://commons.wikimedia.org/wiki/File:The_Bund_22079-Shanghai_(32913511622).jpg"}};
+  const MAX_SKIP = 5; // more skipped answers than this: no winner, too few answers to judge
+  const SKIP = -1;
+
+  const T = {
+    en: {
+      dir: "ltr", other: "العربية", city: { hk: "Hong Kong", sh: "Shanghai" }, title: "Holiday Questionnaire",
+      kind: { text: "Pick one", situation: "Which sounds better?", photo: "Which would you rather walk into?" },
+      count: (i, n) => i + " of " + n, done: "Done", back: "Previous question", photo: "Photo",
+      required: "Please answer: this one cannot be skipped", skip: "Skip this question",
+      introKind: (n) => n + " quick questions", introH: "Where should we spend the holidays?",
+      introP: "Answer with what you would enjoy most. There are no right answers and nothing here is about money.",
+      introL: ["Some questions are short choices, some describe a moment, and some show two photos.", "Go with your first feeling.",
+        "You can skip a question if you have no opinion, except the ones framed in red.", "At the end you will see which city fits you better, and why."],
+      start: "Start", cont: "Continue", again: "Start again",
+      eyebrow: "Your holiday city", tie: "It is a tie", tieLine: "Both cities fit you equally well. Talk it over together.",
+      winLine: (w, l) => w + " fits what you enjoy better than " + l + ".",
+      noneEyebrow: "No result yet", noneH: "Not enough answers",
+      noneLine: (s, n) => "You skipped " + s + " of " + n + " questions. With so few answers, picking a city would only be a guess.",
+      noneBtn: "Answer the skipped questions",
+      skipNote: (s) => s === 1 ? "You skipped 1 question." : "You skipped " + s + " questions.",
+      tipped: "What tipped it", lost: (l) => "Where " + l + " won", photos: "The photos", pick: "Your pick", all: "All your answers",
+      either: "Either", skipped: "Skipped", pickedPhoto: (c) => "You picked the photo of " + c.charAt(0).toLowerCase() + c.slice(1),
+      wa: "Send to Shady on WhatsApp", copy: "Copy result", copied: "Copied", copyFail: "Copy failed",
+      credits: "Photos from Wikimedia Commons: ", by: " by ",
+      share: (city, r, tips) => "Holiday questionnaire result: " + city + "\nHong Kong " + r.pHk + ", Shanghai " + r.pSh + (r.skipped ? "\nSkipped: " + r.skipped : "") + "\n\nWhat tipped it:\n" + tips.map((t) => "- " + t).join("\n"),
+      shareTie: "a tie",
+    },
+    ar: {
+      dir: "rtl", other: "English", city: { hk: "هونغ كونغ", sh: "شنغهاي" }, title: "استبيان الإجازة",
+      kind: { text: "اختاري إجابة", situation: "أيهما أجمل في رأيكِ؟", photo: "أي صورة تحبين أن تكوني فيها؟" },
+      count: (i, n) => i + " من " + n, done: "انتهى", back: "السؤال السابق", photo: "صورة",
+      required: "أجيبي من فضلكِ: لا يمكن تخطي هذا السؤال", skip: "تخطي هذا السؤال",
+      introKind: (n) => n + " سؤالًا سريعًا", introH: "أين نقضي الإجازة؟",
+      introP: "اختاري ما ستستمتعين به أكثر. لا توجد إجابات صحيحة أو خاطئة، ولا علاقة لأي سؤال بالمال.",
+      introL: ["بعض الأسئلة اختيارات قصيرة، وبعضها يصف موقفًا، وبعضها يعرض صورتين.", "اختاري أول ما تشعرين به.",
+        "يمكنكِ تخطي أي سؤال ليس لديكِ رأي فيه، ما عدا الأسئلة ذات الإطار الأحمر.", "في النهاية ستعرفين أي مدينة تناسبكِ أكثر، ولماذا."],
+      start: "ابدئي", cont: "أكملي", again: "ابدئي من جديد",
+      eyebrow: "مدينة إجازتكِ", tie: "تعادل", tieLine: "المدينتان تناسبانكِ بالقدر نفسه. تناقشا معًا.",
+      winLine: (w, l) => w + " تناسب ما تحبينه أكثر من " + l + ".",
+      noneEyebrow: "لا توجد نتيجة بعد", noneH: "الإجابات غير كافية",
+      noneLine: (s, n) => "تخطيتِ " + s + " من " + n + " سؤالًا. مع هذا العدد القليل من الإجابات، سيكون اختيار المدينة مجرد تخمين.",
+      noneBtn: "أجيبي عن الأسئلة التي تخطيتِها",
+      skipNote: (s) => s === 1 ? "تخطيتِ سؤالًا واحدًا." : s === 2 ? "تخطيتِ سؤالين." : "تخطيتِ " + s + " أسئلة.",
+      tipped: "ما الذي رجّح الكفة", lost: (l) => "أين تفوقت " + l, photos: "الصور", pick: "اختياركِ", all: "كل إجاباتكِ",
+      either: "كلتاهما", skipped: "تم التخطي", pickedPhoto: (c) => "اخترتِ صورة: " + c,
+      wa: "أرسلي النتيجة لشادي على واتساب", copy: "انسخي النتيجة", copied: "تم النسخ", copyFail: "تعذر النسخ",
+      credits: "الصور من ويكيميديا كومنز: ", by: " - ",
+      share: (city, r, tips) => "نتيجة استبيان الإجازة: " + city + "\nهونغ كونغ " + r.pHk + "، شنغهاي " + r.pSh + (r.skipped ? "\nأسئلة تم تخطيها: " + r.skipped : "") + "\n\nما الذي رجّح الكفة:\n" + tips.map((t) => "- " + t).join("\n"),
+      shareTie: "تعادل",
+    },
+  };
+
+  // Language: ?lang=ar or ?lang=en wins, then the last choice in this browser, then English.
+  let lang = "en";
+  try { lang = localStorage.getItem("tripQuizLang") || lang; } catch (_) {}
+  const qp = new URLSearchParams(location.search).get("lang"); if (qp === "ar" || qp === "en") lang = qp;
+  if (!T[lang]) lang = "en";
+  let L = T[lang];
+  const tx = (o, k) => (lang !== "en" && o.ar && o.ar[k] != null ? o.ar[k] : o[k]);
+  function setLang(l) {
+    lang = l; L = T[l];
+    try { localStorage.setItem("tripQuizLang", l); } catch (_) {}
+    const u = new URL(location.href); u.searchParams.set("lang", l); history.replaceState(null, "", u);
+    applyLang(); render();
+  }
+  function applyLang() {
+    const h = document.documentElement; h.lang = lang; h.dir = L.dir; document.title = L.title;
+    $("back").setAttribute("aria-label", L.back); $("lang2").textContent = L.other;
+  }
 
   const KEY = "tripQuiz1";
-  let st = { i: -1, a: {} };
-  try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && typeof s.i === "number" && s.a) st = s; } catch (_) {}
+  let st = { i: -1, a: {}, review: false };
+  try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && typeof s.i === "number" && s.a) st = Object.assign({ review: false }, s); } catch (_) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (_) {} };
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const N = QUESTIONS.length;
+  const isSkip = (i) => st.a[i] === SKIP;
+  const stripCity = (c) => c.replace(/(, (Hong Kong|Shanghai)|، (هونغ كونغ|شنغهاي))$/, "");
+
+  // Next screen: in review mode jump to the next skipped question, otherwise go straight on.
+  function next() {
+    if (st.review) { let j = st.i + 1; while (j < N && !isSkip(j)) j++; st.i = j; if (j >= N) st.review = false; }
+    else st.i++;
+    save(); render(); window.scrollTo(0, 0);
+  }
 
   function render() {
     const main = $("main");
@@ -149,21 +245,22 @@ button { -webkit-tap-highlight-color: transparent; }
     if (st.i < 0) return intro(main);
     if (st.i >= N) return result(main);
     $("bar").style.width = Math.round((st.i / N) * 100) + "%";
-    $("count").textContent = (st.i + 1) + " of " + N;
+    $("count").textContent = L.count(st.i + 1, N);
     $("back").hidden = false;
     const Q = QUESTIONS[st.i], picked = st.a[st.i];
-    const kind = { text: "Pick one", situation: "Which sounds better?", photo: "Which would you rather walk into?" }[Q.kind];
-    let h = '<section class="card fade"><p class="kind">' + kind + '</p><h2>' + esc(Q.q) + '</h2>' + (Q.sub ? '<p class="sub">' + esc(Q.sub) + '</p>' : '<div style="height:10px"></div>');
+    let h = '<section class="card fade' + (Q.required ? " req" : "") + '">' + (Q.required ? '<p class="reqtag">' + esc(L.required) + '</p>' : "") +
+      '<p class="kind">' + esc(L.kind[Q.kind]) + '</p><h2>' + esc(tx(Q, "q")) + '</h2><div style="height:10px"></div>';
     if (Q.kind === "photo") {
-      h += '<div class="pics">' + Q.opts.map((o, k) => '<button class="pic" data-k="' + k + '" aria-pressed="' + (picked === k) + '" aria-label="Photo ' + "AB"[k] + '"><img src="quiz/' + esc(o.img) + '.jpg" alt="" ' + (k ? 'loading="lazy"' : '') + '><span class="tag">' + "AB"[k] + '</span></button>').join("") + '</div>';
+      h += '<div class="pics">' + Q.opts.map((o, k) => '<button class="pic" data-k="' + k + '" aria-pressed="' + (picked === k) + '" aria-label="' + esc(L.photo) + ' ' + "AB"[k] + '"><img src="quiz/' + esc(o.img) + '.jpg" alt="" ' + (k ? 'loading="lazy"' : '') + '><span class="tag">' + "AB"[k] + '</span></button>').join("") + '</div>';
     } else {
-      h += '<div class="opts">' + Q.opts.map((o, k) => '<button class="opt' + (Q.kind === "situation" ? " sit" : "") + '" data-k="' + k + '" aria-pressed="' + (picked === k) + '"><b>' + esc(o.t) + '</b>' + (o.d ? '<span>' + esc(o.d) + '</span>' : "") + '</button>').join("") + '</div>';
+      h += '<div class="opts">' + Q.opts.map((o, k) => { const d = tx(o, "d"); return '<button class="opt' + (Q.kind === "situation" ? " sit" : "") + '" data-k="' + k + '" aria-pressed="' + (picked === k) + '"><b>' + esc(tx(o, "t")) + '</b>' + (d ? '<span>' + esc(d) + '</span>' : "") + '</button>'; }).join("") + '</div>';
     }
+    if (!Q.required) h += '<button class="skip" data-k="' + SKIP + '" aria-pressed="' + (picked === SKIP) + '">' + esc(L.skip) + '</button>';
     h += '</section>';
     main.innerHTML = h;
     main.querySelectorAll("[data-k]").forEach((b) => b.addEventListener("click", () => {
       st.a[st.i] = +b.dataset.k; main.querySelectorAll("[data-k]").forEach((x) => x.setAttribute("aria-pressed", x === b));
-      setTimeout(() => { st.i++; save(); render(); window.scrollTo(0, 0); }, 220);
+      setTimeout(next, 220);
     }));
     // Preload the next photo pair.
     const nx = QUESTIONS[st.i + 1]; if (nx && nx.kind === "photo") nx.opts.forEach((o) => { const im = new Image(); im.src = "quiz/" + o.img + ".jpg"; });
@@ -171,60 +268,78 @@ button { -webkit-tap-highlight-color: transparent; }
 
   function intro(main) {
     const done = Object.keys(st.a).length;
-    main.innerHTML = '<section class="card intro fade"><p class="kind">' + N + ' quick questions</p><h1>Where should we spend the holidays?</h1>' +
-      '<p>Answer with what you would enjoy most. There are no right answers and nothing here is about money.</p>' +
-      '<ul><li>Some questions are short choices, some describe a moment, and some show two photos.</li><li>Go with your first feeling.</li><li>At the end you will see which city fits you better, and why.</li></ul>' +
-      '<div class="row"><button class="btn" id="go">' + (done ? "Continue" : "Start") + '</button>' + (done ? '<button class="btn ghost" id="restart">Start again</button>' : "") + '</div></section>';
+    main.innerHTML = '<section class="card intro fade"><div class="lrow"><button class="lang" id="lang1">' + esc(L.other) + '</button></div>' +
+      '<p class="kind">' + esc(L.introKind(N)) + '</p><h1>' + esc(L.introH) + '</h1><p>' + esc(L.introP) + '</p>' +
+      '<ul>' + L.introL.map((t, k) => '<li' + (k === 2 ? ' class="r"' : "") + '>' + esc(t) + '</li>').join("") + '</ul>' +
+      '<div class="row"><button class="btn" id="go">' + esc(done ? L.cont : L.start) + '</button>' + (done ? '<button class="btn ghost" id="restart">' + esc(L.again) + '</button>' : "") + '</div></section>';
+    $("lang1").addEventListener("click", () => setLang(lang === "ar" ? "en" : "ar"));
     $("go").addEventListener("click", () => { st.i = done ? Math.min(done, N) : 0; save(); render(); });
     if (done) $("restart").addEventListener("click", restart);
   }
 
-  function restart() { st = { i: 0, a: {} }; save(); render(); window.scrollTo(0, 0); }
+  function restart() { st = { i: 0, a: {}, review: false }; save(); render(); window.scrollTo(0, 0); }
 
   function tally() {
-    let hk = 0, sh = 0; const rows = [];
+    let hk = 0, sh = 0, skipped = 0; const rows = [];
     QUESTIONS.forEach((Q, i) => {
+      if (isSkip(i)) { skipped++; rows.push({ Q, i, skip: true, lean: 0 }); return; }
       const o = Q.opts[st.a[i]]; if (!o) return;
       const w = Q.w || 1; hk += o.hk * w; sh += o.sh * w;
       rows.push({ Q, o, i, lean: (o.hk - o.sh) * w });
     });
     const tot = hk + sh || 1, pHk = Math.round((hk / tot) * 100);
-    return { hk, sh, pHk, pSh: 100 - pHk, rows };
+    return { hk, sh, pHk, pSh: 100 - pHk, rows, skipped };
   }
 
   function result(main) {
-    $("bar").style.width = "100%"; $("count").textContent = "Done"; $("back").hidden = false;
-    const r = tally(), tie = r.pHk === r.pSh, win = r.pHk > r.pSh ? "hk" : "sh", lose = win === "hk" ? "sh" : "hk";
+    $("bar").style.width = "100%"; $("count").textContent = L.done; $("back").hidden = false;
+    const r = tally(), C = L.city;
+    const ans = (x) => x.skip ? L.skipped : x.Q.kind === "photo" ? L.pickedPhoto(stripCity(tx(x.o, "cap"))) : tx(x.o, "t");
+    const leanPill = (x) => x.skip ? '<span class="pill skip-p">' + esc(L.skipped) + '</span>' :
+      '<span class="pill ' + (x.lean > 0 ? "hk" : x.lean < 0 ? "sh" : "even") + '">' + esc(x.lean > 0 ? C.hk : x.lean < 0 ? C.sh : L.either) + '</span>';
+    const allHTML = '<section class="card sec fade"><h2>' + esc(L.all) + '</h2><div class="why">' + r.rows.map((x) => '<div class="w"><b>' + leanPill(x) + esc(tx(x.Q, "q")) + '</b><p>' + esc(ans(x)) + '</p></div>').join("") + '</div>' +
+      '<div class="row"><button class="btn ghost" id="again">' + esc(L.again) + '</button></div></section>';
+
+    // Too many skips: no winner.
+    if (r.skipped > MAX_SKIP) {
+      main.innerHTML = '<section class="card win none fade"><p class="eyebrow">' + esc(L.noneEyebrow) + '</p><h1>' + esc(L.noneH) + '</h1><p class="line">' + esc(L.noneLine(r.skipped, N)) + '</p>' +
+        '<div class="row" style="justify-content:center"><button class="btn" id="review">' + esc(L.noneBtn) + '</button></div></section>' + allHTML;
+      $("review").addEventListener("click", () => { st.review = true; let j = 0; while (j < N && !isSkip(j)) j++; st.i = j; save(); render(); window.scrollTo(0, 0); });
+      $("again").addEventListener("click", restart);
+      return;
+    }
+
+    const tie = r.pHk === r.pSh, win = r.pHk > r.pSh ? "hk" : "sh", lose = win === "hk" ? "sh" : "hk";
     const sign = win === "hk" ? 1 : -1;
     const tipped = r.rows.filter((x) => x.lean * sign > 0).sort((a, b) => b.lean * sign - a.lean * sign).slice(0, 4);
     const other = r.rows.filter((x) => x.lean * sign < 0).sort((a, b) => a.lean * sign - b.lean * sign).slice(0, 2);
-    const ans = (x) => { if (x.Q.kind !== "photo") return x.o.t; const c = x.o.cap.replace(/, (Hong Kong|Shanghai)$/, ""); return "You picked the photo of " + c.charAt(0).toLowerCase() + c.slice(1); };
-    const whyCard = (x) => '<div class="w"><b><span class="pill ' + (x.lean > 0 ? "hk" : "sh") + '">' + CITY[x.lean > 0 ? "hk" : "sh"] + '</span>' + esc(ans(x)) + '</b><p>' + esc(x.o.why) + '</p></div>';
+    const whyCard = (x) => '<div class="w"><b>' + leanPill(x) + esc(ans(x)) + '</b><p>' + esc(tx(x.o, "why")) + '</p></div>';
     const photos = [];
     QUESTIONS.forEach((Q, i) => { if (Q.kind === "photo") Q.opts.forEach((o, k) => photos.push({ o, chosen: st.a[i] === k })); });
 
-    let h = '<section class="card win fade"><p class="eyebrow">Your holiday city</p><h1>' + (tie ? "It is a tie" : CITY[win]) + '</h1>' +
-      '<p class="line">' + (tie ? "Both cities fit you equally well. Talk it over together." : CITY[win] + " fits what you enjoy better than " + CITY[lose] + ".") + '</p>' +
-      '<div class="scores">' + ["hk", "sh"].map((c) => '<div class="score ' + c + '"><span>' + CITY[c] + '</span><div class="track"><i data-w="' + (c === "hk" ? r.pHk : r.pSh) + '"></i></div><span class="n">' + (c === "hk" ? r.pHk : r.pSh) + '</span></div>').join("") + '</div>' +
-      '<div class="row" style="justify-content:center"><a class="btn wa" id="wa" target="_blank" rel="noopener">Send to Shady on WhatsApp</a><button class="btn ghost" id="copy">Copy result</button></div></section>';
-    if (tipped.length) h += '<section class="card sec fade"><h2>What tipped it</h2><div class="why">' + tipped.map(whyCard).join("") + '</div></section>';
-    if (other.length && !tie) h += '<section class="card sec fade"><h2>Where ' + CITY[lose] + ' won</h2><div class="why">' + other.map(whyCard).join("") + '</div></section>';
-    h += '<section class="card sec fade"><h2>The photos</h2><div class="revs">' + photos.map((p) => '<figure class="rev' + (p.chosen ? " chosen" : "") + '"><img src="quiz/' + esc(p.o.img) + '.jpg" alt="" loading="lazy">' + (p.chosen ? '<span class="mine">Your pick</span>' : "") + '<figcaption><span class="pill ' + (p.o.hk > p.o.sh ? "hk" : "sh") + '">' + CITY[p.o.hk > p.o.sh ? "hk" : "sh"] + '</span>' + esc(p.o.cap.replace(/, (Hong Kong|Shanghai)$/, "")) + '</figcaption></figure>').join("") + '</div>' +
-      '<p class="credits">Photos from Wikimedia Commons: ' + Object.values(CREDITS).map((c) => '<a href="' + esc(c.source) + '" target="_blank" rel="noopener">' + esc(c.title) + '</a> by ' + esc(c.author) + ' (' + esc(c.license) + ')').join("; ") + '.</p></section>';
-    h += '<section class="card sec fade"><h2>All your answers</h2><div class="why">' + r.rows.map((x) => '<div class="w"><b><span class="pill ' + (x.lean > 0 ? "hk" : x.lean < 0 ? "sh" : "even") + '">' + (x.lean > 0 ? CITY.hk : x.lean < 0 ? CITY.sh : "Either") + '</span>' + esc(x.Q.q) + '</b><p>' + esc(ans(x)) + '</p></div>').join("") + '</div>' +
-      '<div class="row"><button class="btn ghost" id="again">Start again</button></div></section>';
+    let h = '<section class="card win fade"><p class="eyebrow">' + esc(L.eyebrow) + '</p><h1>' + esc(tie ? L.tie : C[win]) + '</h1>' +
+      '<p class="line">' + esc(tie ? L.tieLine : L.winLine(C[win], C[lose])) + '</p>' +
+      '<div class="scores">' + ["hk", "sh"].map((c) => '<div class="score ' + c + '"><span>' + esc(C[c]) + '</span><div class="track"><i data-w="' + (c === "hk" ? r.pHk : r.pSh) + '"></i></div><span class="n">' + (c === "hk" ? r.pHk : r.pSh) + '</span></div>').join("") + '</div>' +
+      (r.skipped ? '<p class="skipnote">' + esc(L.skipNote(r.skipped)) + '</p>' : "") +
+      '<div class="row" style="justify-content:center"><a class="btn wa" id="wa" target="_blank" rel="noopener">' + esc(L.wa) + '</a><button class="btn ghost" id="copy">' + esc(L.copy) + '</button></div></section>';
+    if (tipped.length) h += '<section class="card sec fade"><h2>' + esc(L.tipped) + '</h2><div class="why">' + tipped.map(whyCard).join("") + '</div></section>';
+    if (other.length && !tie) h += '<section class="card sec fade"><h2>' + esc(L.lost(C[lose])) + '</h2><div class="why">' + other.map(whyCard).join("") + '</div></section>';
+    h += '<section class="card sec fade"><h2>' + esc(L.photos) + '</h2><div class="revs">' + photos.map((p) => { const c = p.o.hk > p.o.sh ? "hk" : "sh"; return '<figure class="rev' + (p.chosen ? " chosen" : "") + '"><img src="quiz/' + esc(p.o.img) + '.jpg" alt="" loading="lazy">' + (p.chosen ? '<span class="mine">' + esc(L.pick) + '</span>' : "") + '<figcaption><span class="pill ' + c + '">' + esc(C[c]) + '</span>' + esc(stripCity(tx(p.o, "cap"))) + '</figcaption></figure>'; }).join("") + '</div>' +
+      '<p class="credits">' + esc(L.credits) + Object.values(CREDITS).map((c) => '<a href="' + esc(c.source) + '" target="_blank" rel="noopener">' + esc(c.title) + '</a>' + esc(L.by) + esc(c.author) + ' (' + esc(c.license) + ')').join("; ") + '.</p></section>';
+    h += allHTML;
     main.innerHTML = h;
     requestAnimationFrame(() => requestAnimationFrame(() => main.querySelectorAll(".track i").forEach((i) => { i.style.width = i.dataset.w + "%"; })));
-    const text = "Holiday questionnaire result: " + (tie ? "a tie" : CITY[win]) + "\n" + CITY.hk + " " + r.pHk + ", " + CITY.sh + " " + r.pSh + "\n\nWhat tipped it:\n" +
-      tipped.map((x) => "- " + ans(x)).join("\n") + "\n\n" + location.href.split("#")[0];
+    const text = L.share(tie ? L.shareTie : C[win], r, tipped.map(ans)) + "\n\n" + location.href.split("#")[0];
     $("wa").href = "https://wa.me/?text=" + encodeURIComponent(text);
     $("copy").addEventListener("click", async () => {
-      try { await navigator.clipboard.writeText(text); $("copy").textContent = "Copied"; } catch (_) { $("copy").textContent = "Copy failed"; }
+      try { await navigator.clipboard.writeText(text); $("copy").textContent = L.copied; } catch (_) { $("copy").textContent = L.copyFail; }
     });
     $("again").addEventListener("click", restart);
   }
 
-  $("back").addEventListener("click", () => { st.i = Math.max(-1, st.i - 1); save(); render(); window.scrollTo(0, 0); });
+  $("back").addEventListener("click", () => { st.review = false; st.i = Math.max(-1, st.i - 1); save(); render(); window.scrollTo(0, 0); });
+  $("lang2").addEventListener("click", () => setLang(lang === "ar" ? "en" : "ar"));
+  applyLang();
   render();
 })();
 </script>
