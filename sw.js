@@ -8,7 +8,7 @@ self.addEventListener('fetch', (e) => {
   const u = new URL(r.url);
   if (r.mode === 'navigate') {
     const key = u.pathname.endsWith('/') ? 'index.html' : u.pathname.split('/').pop();
-    e.respondWith(fetch(r).then((res) => { const c = res.clone(); caches.open(V).then((k) => k.put(key, c)); return res; }).catch(() => caches.match(key).then((hit) => hit || caches.match('index.html'))));
+    e.respondWith(fetch(r.url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => { const c = res.clone(); caches.open(V).then((k) => k.put(key, c)); return res; }).catch(() => caches.match(key).then((hit) => hit || caches.match('index.html'))));
     return;
   }
   if (u.origin === location.origin) { e.respondWith(caches.match(r).then((hit) => hit || fetch(r))); return; }
