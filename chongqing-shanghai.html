@@ -307,6 +307,11 @@ a:focus-visible, summary:focus-visible, button:focus-visible { outline: none; bo
 .hguide b { font-size: 17px; font-weight: 700; }
 .hguide small { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hguide-note { font-size: 12px; color: var(--muted); margin: -4px 0 10px; }
+/* Payment label: no prepayment (nothing charged or held before the stay), pay at the hotel with a card hold, or prepaid */
+.hb-pay { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px 0 6px; border-radius: 999px; background: var(--b-grey-bg); color: var(--b-grey); }
+.hb-pay.none { background: var(--b-green-bg); color: var(--b-green); }
+.hb-pay.hold { background: var(--b-orange-bg); color: var(--b-orange); }
+.hb-pay svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .hb-bidet svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* Status badges: icon + label (the design's icon circles, with the word kept for clarity) */
@@ -1093,12 +1098,17 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
   const cancelLine = (o) => o.cancel ? '<span class="opt-cancel">✓ ' + esc(o.cancel) + '</span>' : o.unit === "room" && o.status !== "sold_out" ? '<span class="opt-cancel no">Non-refundable</span>' : "";
   // Star rating (Trip.com "diamonds" for mainland hotels without an official rating) and a bidet icon when the room has one
   const BIDET_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16"/><path d="M5 11a7 6 0 0 0 14 0"/><path d="M9 16.5 8 21h8l-1-4.5"/><path d="M12 3v4M8.5 4.5 10 7.5M15.5 4.5 14 7.5"/></svg>';
+  // Hotel option `pay`: none = no prepayment and no card hold before the stay, hold = pay at the hotel but the card is held, prepay = paid when booking
+  const PAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/></svg>';
+  const PAY_TEXT = { none: ["No prepayment", "Nothing to pay until the stay"], hold: ["Pay at hotel · card held", "Pay at the hotel, but the full amount is held on the card"], prepay: ["Prepay", "Paid when booking"] };
   function hotelBadges(o) {
     if (!o) return "";
-    const n = Math.round(o.stars || 0), dia = o.starsKind === "diamond";
-    const stars = n ? '<span class="hb-stars" title="' + esc(n + (dia ? " diamonds on Trip.com (no official star rating)" : "-star hotel")) + '">' + esc(n + (dia ? "-diamond hotel" : "-star hotel")) + '<i aria-hidden="true">' + (dia ? "◆" : "★").repeat(n) + '</i></span>' : "";
+    const n = Math.round(o.stars || 0), dia = o.starsKind === "diamond", circ = o.starsKind === "circle";
+    const stars = n ? '<span class="hb-stars" title="' + esc(n + (dia ? " diamonds on Trip.com (no official star rating)" : circ ? " circles on Booking.com (Booking.com's own rating, not an official star rating)" : "-star hotel")) + '">' + esc(n + (dia ? "-diamond hotel" : "-star hotel")) + '<i aria-hidden="true">' + (dia ? "◆" : circ ? "●" : "★").repeat(n) + '</i></span>' : "";
     const bidet = o.bidet === "yes" ? '<span class="hb-bidet" title="' + esc(o.bidetWhy || "Room has a bidet") + '">' + BIDET_SVG + 'Bidet</span>' : "";
-    return stars || bidet ? '<span class="hb">' + stars + bidet + '</span>' : "";
+    const pt = PAY_TEXT[o.pay];
+    const pay = pt ? '<span class="hb-pay ' + esc(o.pay) + '" title="' + esc(o.payWhy || pt[1]) + '">' + PAY_SVG + esc(pt[0]) + '</span>' : "";
+    return stars || bidet || pay ? '<span class="hb">' + stars + bidet + pay + '</span>' : "";
   }
   // Per-city price guide (typical refundable night for 2 adults incl. taxes, from Trip.com search), stored on the hotel doc as `guide`
   function cityGuide(xs) {
