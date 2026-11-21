@@ -1001,18 +1001,34 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
   }
 
   function keywordFrom(url) { try { return new URL(url).searchParams.get("keyword"); } catch (_) { return null; } }
-  // Instagram and TikTok open keyword search for the place name (Shady asked on 9 Nov: hashtag pages found nothing)
-  const igSearch = (term) => "https://www.instagram.com/explore/search/keyword/?q=" + encodeURIComponent(term);
-  const ttSearch = (term) => "https://www.tiktok.com/search?q=" + encodeURIComponent(term);
+  // Instagram and TikTok open keyword search for the place name (Shady asked on 9 Nov: hashtag pages found nothing).
+  // They search the name only (Shady, 21 Nov: searches with the full street address found nothing): the text before the first
+  // comma, without brackets, plus the city word the place carried.
+  const CITY_WORDS = Object.values(CITY_WORD).concat(["Macau"]);
+  function socialTerm(term) {
+    const s = String(term || ""), low = s.toLowerCase();
+    const head = s.split(",")[0].replace(/\s*[(（][^)）]*[)）]/g, " ").replace(/\s+/g, " ").trim() || s.trim();
+    let city = "", at = -1;
+    for (const w of CITY_WORDS) { const i = low.lastIndexOf(w.toLowerCase()); if (i > at) { at = i; city = w; } }
+    return city && !head.toLowerCase().includes(city.toLowerCase()) ? head + " " + city : head;
+  }
+  // The page is used on iPhone only (Shady, 21 Nov), so there TikTok opens its app with the link TikTok's own mobile site uses
+  // (snssdk1233://search?keyword=); tiktok.com/search is not a web address the TikTok app claims, so it stayed in the browser.
+  // Other devices, and the page inside the claude.ai frame, keep the web links.
+  const IOS_APPS = /iPhone|iPad|iPod/.test(navigator.userAgent) && window.top === window;
+  const igSearch = (term) => "https://www.instagram.com/explore/search/keyword/?q=" + encodeURIComponent(socialTerm(term));
+  const ttSearch = (term) => (IOS_APPS ? "snssdk1233://search?keyword=" : "https://www.tiktok.com/search?q=") + encodeURIComponent(socialTerm(term));
+  // App links open in place: a new tab would stay behind empty
+  const newTab = (href) => /^https?:/.test(href) ? ' target="_blank" rel="noopener"' : "";
   function iconLinks(term, listingUrl, igTag) {
     if (!term) return "";
     const q = encodeURIComponent(term);
-    const items = [["search", "Trip.com", "Search on Trip.com", "https://www.trip.com/global-search/searchlist/search?keyword=" + q + "&curr=USD&locale=en-XX"]];
-    if (listingUrl) items.push(["ticket", "Listing", "Open the listing", listingUrl]);
-    items.push(["camera", "Instagram", "Search Instagram", igSearch(term)]);
-    items.push(["tiktok", "TikTok", "Search TikTok", ttSearch(term)]);
-    return '<span class="icons">' + items.map(([ic, lbl, title, href]) =>
-      '<a class="icon-btn" href="' + esc(href) + '" target="_blank" rel="noopener" title="' + esc(title + ": " + term) + '" aria-label="' + esc(title + ": " + term) + '">' + LINK_ICON[ic] + '<span class="lbl">' + lbl + '</span></a>').join("") + '</span>';
+    const items = [["search", "Trip.com", "Search on Trip.com", "https://www.trip.com/global-search/searchlist/search?keyword=" + q + "&curr=USD&locale=en-XX", term]];
+    if (listingUrl) items.push(["ticket", "Listing", "Open the listing", listingUrl, term]);
+    items.push(["camera", "Instagram", "Search Instagram", igSearch(term), socialTerm(term)]);
+    items.push(["tiktok", "TikTok", "Search TikTok", ttSearch(term), socialTerm(term)]);
+    return '<span class="icons">' + items.map(([ic, lbl, title, href, what]) =>
+      '<a class="icon-btn" href="' + esc(href) + '"' + newTab(href) + ' title="' + esc(title + ": " + what) + '" aria-label="' + esc(title + ": " + what) + '">' + LINK_ICON[ic] + '<span class="lbl">' + lbl + '</span></a>').join("") + '</span>';
   }
   function activityTerm(a) {
     if (a.searchTerm) return a.searchTerm;
@@ -1020,7 +1036,9 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
     return a.name.toLowerCase().includes(city.toLowerCase()) ? a.name : a.name + " " + city;
   }
   function activityListing(a) { const r = (a.ratings || []).find((x) => x.platform === "Trip.com" && x.url); return r ? r.url : null; }
-  function placeTerm(place, city) { if (!place) return null; const w = CITY_WORD[city] || ""; return place.toLowerCase().includes(w.toLowerCase()) || /macau/i.test(place) ? place : place + " " + w; }
+  // Adds the day's city word unless the place names it, or its address (after the first comma) names another city:
+  // the Osaka hotel's breakfast on a Kyoto day stays in Osaka
+  function placeTerm(place, city) { if (!place) return null; const w = CITY_WORD[city] || "", low = place.toLowerCase(), addr = low.slice(low.indexOf(",") + 1 || low.length); return low.includes(w.toLowerCase()) || /macau/i.test(place) || CITY_WORDS.some((c) => addr.includes(c.toLowerCase())) ? place : place + " " + w; }
 
   // "16:15" -> "4:15 pm"; data keeps 24-hour values so rows sort and compare simply
   function ampm(t) {
@@ -1354,7 +1372,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
       effItems(d).forEach((it, i) => {
         if (it.type !== "meal") return;
         let m = it, cost = itemCost(it);
-        if (it.activityId) { const a = state.activities.get(it.activityId), p = a && chosen(a); m = Object.assign({}, it, { title: p ? (a.name + ": " + p.label) : it.title, place: p ? p.time || "" : "", note: p ? p.note : "", halal: it.halal, igTag: (p && p.igTag) || (a && a.igTag) }); cost = p ? costForGroup(p) : null; }
+        if (it.activityId) { const a = state.activities.get(it.activityId), p = a && chosen(a); m = Object.assign({}, it, { title: p ? (a.name + ": " + p.label) : it.title, place: p ? p.time || "" : "", searchTerm: p ? p.searchTerm || p.label : null, note: p ? p.note : "", halal: it.halal, igTag: (p && p.igTag) || (a && a.igTag) }); cost = p ? costForGroup(p) : null; }
         out.push({ d, i, it: m, raw: (d.items || [])[i], kind: mealKind(it), cost });
       });
     return out;
@@ -1366,7 +1384,8 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
     const city = d.city;
     const price = cost == null ? pill("–", "none", "") : pill((it.costEstimate ? "~" : "") + money(round2(cost)), "meal", money(round2(cost)) + " for two");
     const halal = it.halal ? '<span class="halal h-' + esc(it.halal) + '"' + (it.halalSource ? ' title="' + esc(it.halalSource) + '"' : "") + '>' + esc(HALAL_TEXT[it.halal] || it.halal) + '</span>' : "";
-    const term = it.place ? placeTerm(it.place, city) : null;
+    // A ticketed meal shows its opening hours in place, so it searches for the option's name instead
+    const term = it.searchTerm || (it.place ? placeTerm(it.place, it.city || city) : null);
     const cid = raw.mealId ? (state.choices.get(raw.mealId) || "planned") : "planned";
     const alts = raw.alts || [];
     const altRow = (id, a, base) => '<label class="m-alt"><input type="radio" name="pick-' + esc(raw.mealId) + '" value="' + esc(id) + '"' + (cid === id ? " checked" : "") + disabled + '>' +
@@ -1739,7 +1758,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
   function localFoodSection() {
     const items = (state.localfood && state.localfood.items) || []; if (!items.length) return "";
     const order = ["hk", "macau", "cq", "hz", "sh"], list = items.slice().sort((a, b) => (b.mustTry ? 1 : 0) - (a.mustTry ? 1 : 0) || order.indexOf(a.city) - order.indexOf(b.city));
-    const card = (f) => { const c = LF_CITY[f.city] || [f.city, "hk"], term = f.place ? placeTerm(f.place, c[1]) : null;
+    const card = (f) => { const c = LF_CITY[f.city] || [f.city, "hk"], term = f.searchTerm || (f.place ? placeTerm(f.place, c[1]) : null);
       return '<article class="mcard" style="--dc: var(--' + c[1] + ')"><div class="m-img">' + TYPE_ICON.meal + img(f.image, f.imageCaption || f.dish) +
         '<span class="m-tag">' + esc(c[0]) + (f.mustTry ? ' <span class="chip must">Must-try</span>' : "") + '</span>' +
         (f.cost != null ? '<span class="m-price">' + pill("~" + money(round2(f.cost * travellers())), "meal", (f.costBasis ? f.costBasis + ", " : "") + "estimate for two") + '</span>' : "") +

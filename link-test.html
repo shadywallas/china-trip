@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Link test</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { --bg: #ffffff; --ink: #1c1c1e; --muted: #6b6b70; --line: #e3e3e8; --btn: #f2f2f7; --accent: #0a62d0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111113; --ink: #f2f2f5; --muted: #a0a0a8; --line: #2c2c31; --btn: #1d1d21; --accent: #6aa8ff; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 26px 0 8px; }
+  p { margin: 0 0 10px; color: var(--muted); }
+  .mode { display: inline-block; font-size: 13px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); }
+  a.t { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; margin: 0 0 8px; background: var(--btn); border: 1px solid var(--line); border-radius: 12px; color: var(--ink); text-decoration: none; }
+  a.t b { min-width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--bg); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex: none; }
+  a.t span { display: block; }
+  a.t small { display: block; color: var(--muted); font-size: 13px; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Instagram and TikTok link test</h1>
+  <p>Each button searches for <strong>Shibuya Sky Tokyo</strong>. Tap each one, then come back. Note which numbers open the app <em>on the search results</em>.</p>
+  <p><span class="mode" id="mode">Checking how this page was opened…</span></p>
+
+  <h2>Instagram</h2>
+  <a class="t" target="_blank" rel="noopener" href="https://www.instagram.com/explore/search/keyword/?q=Shibuya%20Sky%20Tokyo"><b>1</b><span>Web search address (what the trip pages use now)<small>instagram.com/explore/search/keyword/?q=…</small></span></a>
+  <a class="t" href="instagram://explore/search/keyword/?q=Shibuya%20Sky%20Tokyo"><b>2</b><span>App link, same path as the web search<small>instagram://explore/search/keyword/?q=…</small></span></a>
+  <a class="t" href="instagram://search?q=Shibuya%20Sky%20Tokyo"><b>3</b><span>App link, search<small>instagram://search?q=…</small></span></a>
+  <a class="t" href="instagram://tag?name=shibuyasky"><b>4</b><span>App link, hashtag #shibuyasky<small>instagram://tag?name=shibuyasky</small></span></a>
+  <a class="t" target="_blank" rel="noopener" href="https://www.instagram.com/explore/tags/shibuyasky/"><b>5</b><span>Web hashtag address #shibuyasky<small>instagram.com/explore/tags/shibuyasky/</small></span></a>
+  <a class="t" href="instagram://explore"><b>6</b><span>App link, Search tab only (you type the name)<small>instagram://explore</small></span></a>
+
+  <h2>TikTok</h2>
+  <a class="t" href="snssdk1233://search?keyword=Shibuya%20Sky%20Tokyo"><b>7</b><span>App link (what the trip pages use now on iPhone)<small>snssdk1233://search?keyword=…</small></span></a>
+  <a class="t" href="tiktok://search?keyword=Shibuya%20Sky%20Tokyo"><b>8</b><span>Second app link format<small>tiktok://search?keyword=…</small></span></a>
+  <a class="t" target="_blank" rel="noopener" href="https://www.tiktok.com/search?q=Shibuya%20Sky%20Tokyo"><b>9</b><span>Old web search address (opened the browser)<small>tiktok.com/search?q=…</small></span></a>
+</main>
+<script>
+  try {
+    var standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    document.getElementById("mode").textContent = standalone ? "Opened from the home-screen icon" : "Opened in the browser";
+  } catch (e) { document.getElementById("mode").textContent = "Opened in the browser"; }
+</script>
+</body>
+</html>
