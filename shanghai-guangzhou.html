@@ -1025,6 +1025,13 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
   // The Instagram app opens its search page but drops the words (Shady, 23 Nov: "it opens the search page empty"), and Instagram
   // publishes no app link that fills them in, so on iPhone the button also copies the words: tap the search box and paste.
   const igCopy = (term) => IOS_APPS ? ' data-copy="' + esc(socialTerm(term)) + '"' : "";
+  // Hashtag pages open the Instagram app straight on posts (Shady, 23 Nov: "hashtag works", from Safari). A place with a known
+  // `hashtag` (activity, option, row, meal or local food; no #) uses it; other places, mostly small restaurants with few tagged
+  // posts, keep the keyword search and the copy step. The old `igTag` values stay unused.
+  const igTagName = (tag) => String(tag).replace(/^#/, "").toLowerCase();
+  const igTagUrl = (tag) => "https://www.instagram.com/explore/tags/" + encodeURIComponent(igTagName(tag)) + "/";
+  // An option that names its own place (searchTerm) uses only its own hashtag, so Borderless never opens #teamlabplanets
+  const activityTag = (a, pick) => pick && pick.searchTerm ? pick.hashtag || null : (pick && pick.hashtag) || a.hashtag || null;
   function copyWords(text) {
     try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).catch(() => {}); return; } } catch (_) {}
     const t = document.createElement("textarea"); t.value = text; t.setAttribute("readonly", ""); t.style.cssText = "position:fixed;top:0;left:0;opacity:0";
@@ -1042,15 +1049,15 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
     copyWords(a.dataset.copy);
     showToast("Copied “" + a.dataset.copy + "”. In Instagram, tap the search box and paste.");
   });
-  function iconLinks(term, listingUrl, igTag) {
+  function iconLinks(term, listingUrl, igTag, tag) {
     if (!term) return "";
     const q = encodeURIComponent(term);
     const items = [["search", "Trip.com", "Search on Trip.com", "https://www.trip.com/global-search/searchlist/search?keyword=" + q + "&curr=USD&locale=en-XX", term]];
     if (listingUrl) items.push(["ticket", "Listing", "Open the listing", listingUrl, term]);
-    items.push(["camera", "Instagram", "Search Instagram", igSearch(term), socialTerm(term)]);
+    items.push(tag ? ["camera", "Instagram", "Instagram posts", igTagUrl(tag), "#" + igTagName(tag)] : ["camera", "Instagram", "Search Instagram", igSearch(term), socialTerm(term), true]);
     items.push(["tiktok", "TikTok", "Search TikTok", ttSearch(term), socialTerm(term)]);
-    return '<span class="icons">' + items.map(([ic, lbl, title, href, what]) =>
-      '<a class="icon-btn" href="' + esc(href) + '"' + newTab(href) + (ic === "camera" ? igCopy(term) : "") + ' title="' + esc(title + ": " + what) + '" aria-label="' + esc(title + ": " + what) + '">' + LINK_ICON[ic] + '<span class="lbl">' + lbl + '</span></a>').join("") + '</span>';
+    return '<span class="icons">' + items.map(([ic, lbl, title, href, what, copy]) =>
+      '<a class="icon-btn" href="' + esc(href) + '"' + newTab(href) + (copy ? igCopy(term) : "") + ' title="' + esc(title + ": " + what) + '" aria-label="' + esc(title + ": " + what) + '">' + LINK_ICON[ic] + '<span class="lbl">' + lbl + '</span></a>').join("") + '</span>';
   }
   function activityTerm(a) {
     if (a.searchTerm) return a.searchTerm;
@@ -1186,7 +1193,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
     return '<label class="opt" for="' + idAttr + '"><input type="radio" name="pick-' + esc(a.id) + '" id="' + idAttr + '" value="' + esc(o.id) + '"' + (cid === o.id ? " checked" : "") + disabled + '>' +
       '<span class="opt-body"><span class="radio" aria-hidden="true"></span><span class="opt-main"><span class="opt-title">' + esc(o.label) +
       ' <span class="chip ' + esc(o.status) + '">' + esc(STATUS_TEXT[o.status] || o.status) + '</span>' + (o.recommended ? ' <span class="rec">★ Suggested</span>' : "") + '</span>' +
-      hotelBadges(o) + prox + cancelLine(o) + upsLine(o) + (meta ? '<span class="opt-meta">' + meta + '</span>' : "") + (term ? iconLinks(term, o.url, o.igTag) : "") + '</span>' +
+      hotelBadges(o) + prox + cancelLine(o) + upsLine(o) + (meta ? '<span class="opt-meta">' + meta + '</span>' : "") + (term ? iconLinks(term, o.url, o.igTag, o.hashtag) : "") + '</span>' +
       '<span class="opt-side">' + rate + priceCol + '</span></span></label>';
   }
 
@@ -1227,7 +1234,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
       (pick && pick.note ? '<p class="stay-why">' + esc(pick.note) + '</p>' : "") +
       roomSquares(pick) +
       (walk.length ? '<div class="stay-walk"><b>Walkable from here</b>' + walk.map((w) => '<span class="wchip">' + esc(w.place) + ' · ' + w.min + ' min</span>').join("") + '</div>' : "") +
-      (pick ? iconLinks(pick.searchTerm || name, pick.url, pick.igTag) : "") +
+      (pick ? iconLinks(pick.searchTerm || name, pick.url, pick.igTag, pick.hashtag) : "") +
       '<details data-key="' + esc(key) + '"' + (open ? " open" : "") + '><summary>Compare ' + (a.options || []).length + ' hotels<span class="hint">' + esc(range) + '</span></summary><div class="opts">' + opts.join("") + '</div></details></section>';
   }
 
@@ -1258,7 +1265,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
       block: '<div class="ticket' + (exploring ? " exploring" : "") + '">' +
         '<div class="ticket-line">' + decision + status + '<span class="pick">' + esc(pick ? pick.label : exploring ? "Compare the options below." : a.backup ? "Use if something is cancelled." : "Skipped") + '</span></div>' +
         (facts ? '<div class="ticket-facts">' + facts + '</div>' : "") +
-        (!exploring ? (a.kind === "hotel" && pick ? iconLinks(pick.searchTerm || pick.label, pick.url, pick.igTag) : iconLinks((pick && pick.searchTerm) || activityTerm(a), activityListing(a), a.igTag)) : "") +
+        (!exploring ? (a.kind === "hotel" && pick ? iconLinks(pick.searchTerm || pick.label, pick.url, pick.igTag, pick.hashtag) : iconLinks((pick && pick.searchTerm) || activityTerm(a), activityListing(a), a.igTag, activityTag(a, pick))) : "") +
         (exploring && renderTicket.pickAbove ? '<a class="stay-ref" href="#pick-' + esc(a.id) + '">' + (pick ? "Change the pick above ↑" : "Pick an option above ↑") + '</a>' : '<details data-key="' + esc(key) + '"' + (open ? " open" : "") + '><summary>' + (exploring ? "Options we are exploring" : a.kind === "hotel" ? "Hotel options" : "Ticket options") + ' <span class="hint">· ' + (a.options || []).length + '</span></summary><div class="opts">' + opts.join("") + '</div></details>') + '</div>'
     };
   }
@@ -1283,7 +1290,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
     const term = !a && item.place ? placeTerm(item.place, item.city || city) : null;
     return '<li class="row t-' + esc(type) + (isHotel(a) ? " t-stay" : "") + '" id="r-' + esc(rowDate) + '-' + rowIdx + '"><span class="time">' + time + '</span><span class="ic">' + (TYPE_ICON[type] || TYPE_ICON.free) + '</span>' +
       '<div class="main"><span class="kind">' + esc(TYPE_TEXT[type] || type) + (item.optional ? '<span class="opt-tag" title="Optional: do as much as you like, or rest instead">Optional</span>' : "") + (item.halal ? ' <span class="halal h-' + esc(item.halal) + '"' + (item.halalSource ? ' title="' + esc(item.halalSource) + '"' : "") + '>' + esc(HALAL_TEXT[item.halal] || item.halal) + '</span>' : "") + stomachBadge(item) + iceBadge(item) + '</span><span class="title">' + esc(item.title) + '</span>' + rateM +
-      (item.note ? '<span class="note">' + esc(item.note) + '</span>' : "") + stepsLine(item) + (term ? iconLinks(term, null, item.igTag) : "") + extra +
+      (item.note ? '<span class="note">' + esc(item.note) + '</span>' : "") + stepsLine(item) + (term ? iconLinks(term, null, item.igTag, item.hashtag) : "") + extra +
       (item.mealId && item.alts && item.alts.length ? '<a class="swap-ref" href="#meals" data-meal="' + esc(item.mealId) + '">' + (item.swapped ? "⇄ Swapped · change in Meals" : "⇄ Swap this meal") + '</a>' : "") + '</div>' +
       '<div class="right">' + right + '</div></li>';
   }
@@ -1433,7 +1440,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
       (it.hours ? '<div class="m-place">Open ' + esc(it.hours) + '</div>' : "") +
       (it.issue ? '<p class="m-issue">Check before going: ' + esc(it.issue) + '</p>' : "") +
       (it.replacedNote ? '<p class="m-place">Changed from the first plan: ' + esc(it.replacedNote) + '</p>' : "") +
-      (term ? iconLinks(term, null, it.igTag) : "") + swap + '</div></article>';
+      (term ? iconLinks(term, null, it.igTag, it.hashtag) : "") + swap + '</div></article>';
   }
   function renderMeals() {
     const meals = allMeals();
@@ -1713,13 +1720,14 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
     const place = (it) => it.place || it.title;
     const maps = (it) => "https://maps.apple.com/?q=" + encodeURIComponent(placeTerm(place(it), it.city || day.city) || place(it));
     const photoTerm = (it) => placeTerm(place(it), it.city || day.city) || place(it);
-    const photos = (it) => igSearch(photoTerm(it));
+    const photoTag = (it) => { const a = it.activityId ? state.activities.get(it.activityId) : null; return a && !isHotel(a) ? activityTag(a, chosen(a)) : it.hashtag || null; };
+    const photos = (it) => photoTag(it) ? igTagUrl(photoTag(it)) : igSearch(photoTerm(it));
     if (nowIt) {
       const [s, e] = span(nowIt), pct = Math.round(Math.max(0, Math.min(1, (n.min - s) / (e - s))) * 100), left = e - n.min;
       h += '<section class="now-card" aria-label="Now"><div class="nc-top"><span class="live">Now</span><span>' + esc(ampm(nowIt.start)) + (nowIt.end ? " – " + esc(ampm(nowIt.end)) : "") + '</span></div><h2>' + esc(nowIt.title) + '</h2>' + (nowIt.freezing ? '<p class="sub">' + iceBadge(nowIt) + '</p>' : "") +
         (nowIt.place ? '<p class="sub with-ic">' + PIN + esc(nowIt.place) + '</p>' : "") +
         '<div class="prog"><div class="bar"><i style="width:' + pct + '%"></i></div><span>' + esc(durText(left)) + ' left</span></div>' +
-        '<div class="btns"><a class="btn dark" href="' + esc(maps(nowIt)) + '" target="_blank" rel="noopener">' + NAVI + 'Directions</a><a class="btn" href="' + esc(photos(nowIt)) + '" target="_blank" rel="noopener"' + igCopy(photoTerm(nowIt)) + '>' + CAM + 'Photos</a></div>' +
+        '<div class="btns"><a class="btn dark" href="' + esc(maps(nowIt)) + '" target="_blank" rel="noopener">' + NAVI + 'Directions</a><a class="btn" href="' + esc(photos(nowIt)) + '" target="_blank" rel="noopener"' + (photoTag(nowIt) ? "" : igCopy(photoTerm(nowIt))) + '>' + CAM + 'Photos</a></div>' +
         '<a class="stay-ref" href="#r-' + day.date + '-' + nowIt.i + '">See it in the day plan</a></section>';
     } else {
       h += '<section class="now-card" aria-label="Now"><div class="nc-top"><span class="live idle">Free time</span></div><h2>Nothing planned right now</h2><p class="sub">' + esc(nextIt ? "Next up at " + ampm(nextIt.start) + "." : "The plan for today is done.") + '</p></section>';
@@ -1790,7 +1798,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
         '<div class="m-row">' + (f.halal ? '<span class="halal h-' + esc(f.halal) + '">' + esc(HALAL_TEXT[f.halal] || f.halal) + '</span>' : "") + (f.cuisine ? '<span>' + esc(f.cuisine) + '</span>' : "") +
         (f.inPlan ? '<a href="#day/' + esc(f.inPlan) + '" class="stay-ref" style="--c: var(--' + c[1] + ')">In the plan, ' + esc(dayLabel(f.inPlan)) + ' →</a>' : "") + '</div>' +
         (f.why ? '<p class="m-note">' + esc(f.why) + '</p>' : "") + (!f.inPlan && f.wasOn ? '<div class="m-place">Was planned or offered on ' + esc(dayLabel(f.wasOn)) + '</div>' : "") +
-        (term ? iconLinks(term, f.source || null) : "") + '</div></article>'; };
+        (term ? iconLinks(term, f.source || null, null, f.hashtag) : "") + '</div></article>'; };
     return '<section class="ml-day ml-local" id="local-food" style="--dc: var(--k-meal)"><h3>Local food we skipped <span class="t">' + list.length + ' dishes</span></h3>' +
       '<p>The plan keeps to international food (Middle Eastern, Turkish, Indian, Italian pasta and pizza) and skips soupy or doubtful dishes. These local dishes were in the first plan. Only the Chongqing hotpot stays as a must-try; the rest are here if you want to try one.</p>' +
       '<div class="ml-grid">' + list.map(card).join("") + '</div></section>';
